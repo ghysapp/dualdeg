@@ -1,15 +1,43 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { AdsBootstrap } from '@/ads/AdsBootstrap';
+import { LocationsProvider } from '@/state/locations';
+import { PurchasesProvider } from '@/state/purchases';
+import { SettingsProvider } from '@/state/settings';
+import { fontMap } from '@/theme/fonts';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+  const [loaded] = useFonts(fontMap);
+
+  useEffect(() => {
+    if (loaded) SplashScreen.hideAsync();
+  }, [loaded]);
+
+  if (!loaded) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SettingsProvider>
+      <PurchasesProvider>
+        <AdsBootstrap />
+        <LocationsProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen
+              name="add-city"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="settings"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+          </Stack>
+        </LocationsProvider>
+      </PurchasesProvider>
+    </SettingsProvider>
   );
 }
