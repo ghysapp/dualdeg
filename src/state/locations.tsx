@@ -29,11 +29,11 @@ import {
 import { AppState, Linking } from 'react-native';
 
 import { CACHE_TTL, MAX_SAVED_CITIES } from '@/config';
-import { languageToApiLang, type LanguageCode } from '@/i18n/translations';
+import { type LanguageCode } from '@/i18n/translations';
 import { loadJson, readCache, removeCache, saveJson, writeCache } from '@/services/cache';
 import { getZipcodeFromIP } from '@/services/geoip';
+import { fetchWeather } from '@/services/weather';
 import {
-  fetchForecast,
   WeatherApiError,
   type CitySearchResult,
   type WeatherData,
@@ -106,6 +106,9 @@ const IDLE: WeatherEntry = { status: 'idle', refreshing: false };
 
 // Bump when the cached WeatherData shape changes, to invalidate old entries.
 const CACHE_VERSION = 'v3';
+
+// Pull-to-refresh is ignored if the location was fetched within this window.
+const MANUAL_REFRESH_COOLDOWN = 5 * 60 * 1000;
 
 // Cache is scoped by language, since condition text is localized server-side.
 function cacheKey(ref: LocationRef, lang: LanguageCode): string {
@@ -200,12 +203,24 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
         };
       });
 
+      // Route to NWS (US) or WeatherAPI: cities carry a country; the current
+      // tab passes its "lat,lon" so US coords can be detected offline.
+      let coords: { lat: number; lon: number } | null = null;
+      let country: string | null = null;
+      if (ref.kind === 'city') {
+        coords = { lat: ref.city.lat, lon: ref.city.lon };
+        country = ref.city.country;
+      } else {
+        const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(query.trim());
+        if (m) coords = { lat: Number(m[1]), lon: Number(m[2]) };
+      }
+
       inFlight.current.add(key);
       try {
-        const data = await fetchForecast(query, languageToApiLang(language));
+        const data = await fetchWeather({ query, coords, country, language });
         if (__DEV__ && ref.kind === 'current') {
           console.log(
-            `[loc] query="${query}" -> WeatherAPI "${data.location.name}" ` +
+            `[loc] query="${query}" -> "${data.location.name}" ` +
               `(${data.location.lat},${data.location.lon})`,
           );
         }
@@ -401,6 +416,18 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(
     (ref: LocationRef, force = true) => {
+      // Per-location cooldown: ignore a manual refresh if this tab/city was
+      // fetched within the last few minutes.
+      const key = cacheKey(ref, language);
+      const last = entries[key]?.fetchedAt;
+      if (last && Date.now() - last < MANUAL_REFRESH_COOLDOWN) {
+        if (__DEV__) {
+          const secs = Math.round((MANUAL_REFRESH_COOLDOWN - (Date.now() - last)) / 1000);
+          console.log(`[wx] refresh blocked for "${key}" — cooldown, ~${secs}s left`);
+        }
+        return;
+      }
+
       // Pull-to-refresh on the current tab re-acquires the device location
       // (a fresh GPS fix), not just a re-fetch of the last query.
       if (ref.kind === 'current') {
@@ -410,7 +437,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       }
       ensureFresh(ref, force);
     },
-    [ensureFresh, permission, acquireGps, acquireApproximate],
+    [entries, language, ensureFresh, permission, acquireGps, acquireApproximate],
   );
 
   const addCity = useCallback(

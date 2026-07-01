@@ -11,6 +11,14 @@ export const HAS_API_KEY =
 
 export const WEATHER_API_BASE = 'https://api.weatherapi.com/v1';
 
+/**
+ * US National Weather Service (api.weather.gov) — free, no key, US-only. Used
+ * for US locations to spare the WeatherAPI quota; non-US falls back to
+ * WeatherAPI. NWS requires a descriptive User-Agent with a contact.
+ */
+export const NWS_API_BASE = 'https://api.weather.gov';
+export const NWS_USER_AGENT = 'dualdeg-weather/1.0 (com.ghysapp.dualdeg; anthony.ghys@gmail.com)';
+
 /** GeoIP fallback (approximate location from IP when GPS isn't granted). */
 export const GEOIP_API_URL = process.env.EXPO_PUBLIC_GEOIP_API_URL ?? '';
 export const GEOIP_API_KEY = process.env.EXPO_PUBLIC_GEOIP_API_KEY ?? '';

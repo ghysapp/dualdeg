@@ -87,10 +87,15 @@ Greek, Polish, Russian, Ukrainian.
 - Icons: `@expo/vector-icons` (FontAwesome). Graphics: `react-native-svg`
   (sun arc, moon) via `react-native-svg-transformer` for the moon SVG asset.
 
-### Data source
-- **WeatherAPI.com** (`/forecast.json` for current + hourly + 3‑day + astronomy,
-  `/search.json` for city autocomplete). Key via `EXPO_PUBLIC_WEATHERAPI_KEY`.
-  Condition text is localized server‑side with the `lang` param.
+### Data sources (dual provider)
+- **US locations → NWS** (`api.weather.gov`, free, no key) to spare the WeatherAPI
+  quota. **Everywhere else → WeatherAPI.com**. The provider is chosen offline by a
+  bundled US outline (point‑in‑polygon); NWS failures fall back to WeatherAPI.
+- **WeatherAPI.com** (`/forecast.json`, `/search.json` for city autocomplete). Key
+  via `EXPO_PUBLIC_WEATHERAPI_KEY`; condition text localized server‑side via `lang`.
+- **NWS** provides forecast/hourly/daily; astronomy (sun/moon) is computed locally
+  with `suncalc`, feels‑like via NOAA formulas, and condition text is localized in‑app
+  (NWS is English‑only). See `src/services/{weather,nwsApi,usGeo,astronomy}.ts`.
 
 ### App structure
 ```
