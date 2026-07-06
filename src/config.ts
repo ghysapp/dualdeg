@@ -19,6 +19,31 @@ export const WEATHER_API_BASE = 'https://api.weatherapi.com/v1';
 export const NWS_API_BASE = 'https://api.weather.gov';
 export const NWS_USER_AGENT = 'dualdeg-weather/1.0 (com.ghysapp.dualdeg; anthony.ghys@gmail.com)';
 
+/**
+ * Météo-France — free, France-only. Uses the public mobile-app forecast API
+ * (lat/lon → hourly + daily + astronomy) with the shared app token also used by
+ * the Home Assistant integration. Override via env if needed.
+ */
+export const METEOFRANCE_API_BASE = 'https://webservice.meteofrance.com';
+export const METEOFRANCE_TOKEN =
+  process.env.EXPO_PUBLIC_METEOFRANCE_TOKEN ?? '__Wj7dVSTjV9YGu1guveLyDq0g7S7TfTjaHBTPTpO0kj8__';
+
+/**
+ * Germany → Bright Sky (brightsky.dev), a free, no-key JSON API over Deutscher
+ * Wetterdienst (DWD) open data (MOSMIX forecasts + observations), queryable by
+ * lat/lon.
+ */
+export const BRIGHTSKY_API_BASE = 'https://api.brightsky.dev';
+
+/**
+ * MET Norway (api.met.no) — free, official, no key, global. Used for a set of
+ * single-timezone countries (Norway + much of Europe). Requires an identifying
+ * User-Agent with a contact per their terms of service; attribute as
+ * "Weather data from MET Norway".
+ */
+export const METNO_API_BASE = 'https://api.met.no/weatherapi/locationforecast/2.0';
+export const METNO_USER_AGENT = 'dualdeg-weather/1.0 github.com/ghysapp (anthony.ghys@gmail.com)';
+
 /** GeoIP fallback (approximate location from IP when GPS isn't granted). */
 export const GEOIP_API_URL = process.env.EXPO_PUBLIC_GEOIP_API_URL ?? '';
 export const GEOIP_API_KEY = process.env.EXPO_PUBLIC_GEOIP_API_KEY ?? '';

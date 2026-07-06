@@ -21,6 +21,7 @@ import { LocationPrimingModal } from '@/components/weather/LocationPrimingModal'
 import { SkyBackground } from '@/components/weather/SkyBackground';
 import { SunMoonSection } from '@/components/weather/SunMoonSection';
 import { TabStrip } from '@/components/weather/TabStrip';
+import { TempScale } from '@/components/weather/TempScale';
 import { WeatherHero } from '@/components/weather/WeatherHero';
 import { HAS_API_KEY } from '@/config';
 import { useLocations } from '@/state/locations';
@@ -97,6 +98,7 @@ export default function HomeScreen() {
               <HourlyStrip hours={entry.data.hours} sky={sky} />
               <DailyOutlook days={entry.data.days} sky={sky} />
               <SunMoonSection data={entry.data} sky={sky} />
+              <TempScale sky={sky} />
               <View style={{ height: 24 }} />
             </>
           ) : null}

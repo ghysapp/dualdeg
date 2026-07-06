@@ -91,6 +91,14 @@ export default function SettingsScreen() {
               />
             ))}
           </View>
+
+          {/* Attribution */}
+          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, marginTop: 28 }]}>
+            <Pressable style={styles.linkRow} onPress={() => router.push('/attribution')}>
+              <Text style={[styles.langName, { color: c.text }]}>{strings.attribution}</Text>
+              <FontAwesome name="chevron-right" size={13} color={c.subtext} />
+            </Pressable>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -174,4 +182,11 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   langName: { fontFamily: Font.medium, fontSize: 16 },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
 });

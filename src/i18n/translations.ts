@@ -38,6 +38,7 @@ export interface Strings {
   humidity: string;
   wind: string;
   precip: string;
+  tempReference: string;
 
   subCooler: string;
   subWarmer: string;
@@ -95,6 +96,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'New Moon', moonWaxingCrescent: 'Waxing Crescent', moonFirstQuarter: 'First Quarter', moonWaxingGibbous: 'Waxing Gibbous', moonFull: 'Full Moon', moonWaningGibbous: 'Waning Gibbous', moonLastQuarter: 'Last Quarter', moonWaningCrescent: 'Waning Crescent',
     weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
     addCity: 'Add city', searchCity: 'Search for a city', savedSection: 'Saved', noMatches: 'No matches.', searchPrompt: 'Search above to add your first city.', remove: 'Remove', added: 'Added', capacity: 'You can save up to {n} cities. Remove one to add another.', searchFailed: 'Search failed.',
+    tempReference: 'Temperature reference',
     temperature: 'Temperature', language: 'Language',
     locationError: 'Unable to determine your location. Enable location access to see local weather.', loadError: 'Something went wrong loading weather.', tryAgain: 'Try again',
   },
@@ -107,6 +109,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Luna nueva', moonWaxingCrescent: 'Luna creciente', moonFirstQuarter: 'Cuarto creciente', moonWaxingGibbous: 'Gibosa creciente', moonFull: 'Luna llena', moonWaningGibbous: 'Gibosa menguante', moonLastQuarter: 'Cuarto menguante', moonWaningCrescent: 'Luna menguante',
     weekdays: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
     addCity: 'Añadir ciudad', searchCity: 'Buscar una ciudad', savedSection: 'Guardadas', noMatches: 'Sin resultados.', searchPrompt: 'Busca arriba para añadir tu primera ciudad.', remove: 'Quitar', added: 'Añadida', capacity: 'Puedes guardar hasta {n} ciudades. Quita una para añadir otra.', searchFailed: 'Error en la búsqueda.',
+    tempReference: 'Referencia de temperatura',
     temperature: 'Temperatura', language: 'Idioma',
     locationError: 'No se pudo determinar tu ubicación. Activa el acceso a la ubicación para ver el clima local.', loadError: 'Algo salió mal al cargar el clima.', tryAgain: 'Reintentar',
   },
@@ -119,6 +122,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: '新月', moonWaxingCrescent: '蛾眉月', moonFirstQuarter: '上弦月', moonWaxingGibbous: '盈凸月', moonFull: '满月', moonWaningGibbous: '亏凸月', moonLastQuarter: '下弦月', moonWaningCrescent: '残月',
     weekdays: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
     addCity: '添加城市', searchCity: '搜索城市', savedSection: '已保存', noMatches: '无结果。', searchPrompt: '在上方搜索以添加第一个城市。', remove: '移除', added: '已添加', capacity: '最多可保存 {n} 个城市。移除一个以添加新的。', searchFailed: '搜索失败。',
+    tempReference: '温度对照',
     temperature: '温度', language: '语言',
     locationError: '无法确定您的位置。请启用位置访问以查看本地天气。', loadError: '加载天气时出错。', tryAgain: '重试',
   },
@@ -131,6 +135,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: '新月', moonWaxingCrescent: '三日月', moonFirstQuarter: '上弦の月', moonWaxingGibbous: '盈凸月', moonFull: '満月', moonWaningGibbous: '虧凸月', moonLastQuarter: '下弦の月', moonWaningCrescent: '有明月',
     weekdays: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
     addCity: '都市を追加', searchCity: '都市を検索', savedSection: '保存済み', noMatches: '該当なし。', searchPrompt: '上で検索して最初の都市を追加しましょう。', remove: '削除', added: '追加済み', capacity: '都市は最大{n}件まで保存できます。追加するには1件削除してください。', searchFailed: '検索に失敗しました。',
+    tempReference: '気温の対照表',
     temperature: '温度', language: '言語',
     locationError: '現在地を特定できません。現地の天気を見るには位置情報を有効にしてください。', loadError: '天気の読み込み中に問題が発生しました。', tryAgain: '再試行',
   },
@@ -143,6 +148,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Neumond', moonWaxingCrescent: 'Zunehmende Sichel', moonFirstQuarter: 'Erstes Viertel', moonWaxingGibbous: 'Zunehmender Mond', moonFull: 'Vollmond', moonWaningGibbous: 'Abnehmender Mond', moonLastQuarter: 'Letztes Viertel', moonWaningCrescent: 'Abnehmende Sichel',
     weekdays: ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'],
     addCity: 'Stadt hinzufügen', searchCity: 'Stadt suchen', savedSection: 'Gespeichert', noMatches: 'Keine Treffer.', searchPrompt: 'Oben suchen, um deine erste Stadt hinzuzufügen.', remove: 'Entfernen', added: 'Hinzugefügt', capacity: 'Du kannst bis zu {n} Städte speichern. Entferne eine, um eine andere hinzuzufügen.', searchFailed: 'Suche fehlgeschlagen.',
+    tempReference: 'Temperaturreferenz',
     temperature: 'Temperatur', language: 'Sprache',
     locationError: 'Standort konnte nicht ermittelt werden. Aktiviere den Standortzugriff, um das lokale Wetter zu sehen.', loadError: 'Beim Laden des Wetters ist etwas schiefgelaufen.', tryAgain: 'Erneut versuchen',
   },
@@ -155,6 +161,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nouvelle lune', moonWaxingCrescent: 'Premier croissant', moonFirstQuarter: 'Premier quartier', moonWaxingGibbous: 'Gibbeuse croissante', moonFull: 'Pleine lune', moonWaningGibbous: 'Gibbeuse décroissante', moonLastQuarter: 'Dernier quartier', moonWaningCrescent: 'Dernier croissant',
     weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
     addCity: 'Ajouter une ville', searchCity: 'Rechercher une ville', savedSection: 'Enregistrées', noMatches: 'Aucun résultat.', searchPrompt: 'Recherchez ci-dessus pour ajouter votre première ville.', remove: 'Retirer', added: 'Ajoutée', capacity: 'Vous pouvez enregistrer jusqu’à {n} villes. Retirez-en une pour en ajouter une autre.', searchFailed: 'Échec de la recherche.',
+    tempReference: 'Référence de température',
     temperature: 'Température', language: 'Langue',
     locationError: 'Impossible de déterminer votre position. Activez l’accès à la localisation pour voir la météo locale.', loadError: 'Une erreur est survenue lors du chargement de la météo.', tryAgain: 'Réessayer',
   },
@@ -167,6 +174,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Lua nova', moonWaxingCrescent: 'Crescente côncava', moonFirstQuarter: 'Quarto crescente', moonWaxingGibbous: 'Crescente gibosa', moonFull: 'Lua cheia', moonWaningGibbous: 'Minguante gibosa', moonLastQuarter: 'Quarto minguante', moonWaningCrescent: 'Minguante côncava',
     weekdays: ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'],
     addCity: 'Adicionar cidade', searchCity: 'Buscar uma cidade', savedSection: 'Salvas', noMatches: 'Sem resultados.', searchPrompt: 'Busque acima para adicionar sua primeira cidade.', remove: 'Remover', added: 'Adicionada', capacity: 'Você pode salvar até {n} cidades. Remova uma para adicionar outra.', searchFailed: 'Falha na busca.',
+    tempReference: 'Referência de temperatura',
     temperature: 'Temperatura', language: 'Idioma',
     locationError: 'Não foi possível determinar sua localização. Ative o acesso à localização para ver o clima local.', loadError: 'Algo deu errado ao carregar o clima.', tryAgain: 'Tentar novamente',
   },
@@ -179,6 +187,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: '삭', moonWaxingCrescent: '초승달', moonFirstQuarter: '상현달', moonWaxingGibbous: '차오르는 볼록달', moonFull: '보름달', moonWaningGibbous: '기우는 볼록달', moonLastQuarter: '하현달', moonWaningCrescent: '그믐달',
     weekdays: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
     addCity: '도시 추가', searchCity: '도시 검색', savedSection: '저장됨', noMatches: '결과 없음.', searchPrompt: '위에서 검색하여 첫 도시를 추가하세요.', remove: '삭제', added: '추가됨', capacity: '최대 {n}개 도시를 저장할 수 있습니다. 추가하려면 하나를 삭제하세요.', searchFailed: '검색 실패.',
+    tempReference: '온도 대조표',
     temperature: '온도', language: '언어',
     locationError: '위치를 확인할 수 없습니다. 현지 날씨를 보려면 위치 접근을 허용하세요.', loadError: '날씨를 불러오는 중 문제가 발생했습니다.', tryAgain: '다시 시도',
   },
@@ -191,6 +200,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'المحاق', moonWaxingCrescent: 'الهلال المتزايد', moonFirstQuarter: 'التربيع الأول', moonWaxingGibbous: 'الأحدب المتزايد', moonFull: 'البدر', moonWaningGibbous: 'الأحدب المتناقص', moonLastQuarter: 'التربيع الأخير', moonWaningCrescent: 'الهلال المتناقص',
     weekdays: ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
     addCity: 'إضافة مدينة', searchCity: 'ابحث عن مدينة', savedSection: 'المحفوظة', noMatches: 'لا نتائج.', searchPrompt: 'ابحث بالأعلى لإضافة أول مدينة.', remove: 'إزالة', added: 'مضافة', capacity: 'يمكنك حفظ حتى {n} مدن. أزل واحدة لإضافة أخرى.', searchFailed: 'فشل البحث.',
+    tempReference: 'مرجع درجات الحرارة',
     temperature: 'درجة الحرارة', language: 'اللغة',
     locationError: 'تعذّر تحديد موقعك. فعّل الوصول إلى الموقع لرؤية الطقس المحلي.', loadError: 'حدث خطأ أثناء تحميل الطقس.', tryAgain: 'حاول مرة أخرى',
   },
@@ -203,6 +213,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'अमावस्या', moonWaxingCrescent: 'बढ़ता अर्धचंद्र', moonFirstQuarter: 'प्रथम चतुर्थांश', moonWaxingGibbous: 'बढ़ता उभरा चंद्र', moonFull: 'पूर्णिमा', moonWaningGibbous: 'घटता उभरा चंद्र', moonLastQuarter: 'अंतिम चतुर्थांश', moonWaningCrescent: 'घटता अर्धचंद्र',
     weekdays: ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'],
     addCity: 'शहर जोड़ें', searchCity: 'शहर खोजें', savedSection: 'सहेजे गए', noMatches: 'कोई परिणाम नहीं।', searchPrompt: 'अपना पहला शहर जोड़ने के लिए ऊपर खोजें।', remove: 'हटाएँ', added: 'जोड़ा गया', capacity: 'आप अधिकतम {n} शहर सहेज सकते हैं। दूसरा जोड़ने के लिए एक हटाएँ।', searchFailed: 'खोज विफल।',
+    tempReference: 'तापमान संदर्भ',
     temperature: 'तापमान', language: 'भाषा',
     locationError: 'आपका स्थान निर्धारित नहीं हो सका। स्थानीय मौसम देखने के लिए स्थान पहुँच सक्षम करें।', loadError: 'मौसम लोड करने में कुछ गड़बड़ हुई।', tryAgain: 'पुनः प्रयास करें',
   },
@@ -215,6 +226,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Luna nuova', moonWaxingCrescent: 'Luna crescente', moonFirstQuarter: 'Primo quarto', moonWaxingGibbous: 'Gibbosa crescente', moonFull: 'Luna piena', moonWaningGibbous: 'Gibbosa calante', moonLastQuarter: 'Ultimo quarto', moonWaningCrescent: 'Luna calante',
     weekdays: ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'],
     addCity: 'Aggiungi città', searchCity: 'Cerca una città', savedSection: 'Salvate', noMatches: 'Nessun risultato.', searchPrompt: 'Cerca sopra per aggiungere la tua prima città.', remove: 'Rimuovi', added: 'Aggiunta', capacity: 'Puoi salvare fino a {n} città. Rimuovine una per aggiungerne un’altra.', searchFailed: 'Ricerca non riuscita.',
+    tempReference: 'Riferimento temperatura',
     temperature: 'Temperatura', language: 'Lingua',
     locationError: 'Impossibile determinare la tua posizione. Abilita l’accesso alla posizione per vedere il meteo locale.', loadError: 'Si è verificato un errore durante il caricamento del meteo.', tryAgain: 'Riprova',
   },
@@ -227,6 +239,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nieuwe maan', moonWaxingCrescent: 'Wassende sikkel', moonFirstQuarter: 'Eerste kwartier', moonWaxingGibbous: 'Wassende maan', moonFull: 'Volle maan', moonWaningGibbous: 'Afnemende maan', moonLastQuarter: 'Laatste kwartier', moonWaningCrescent: 'Afnemende sikkel',
     weekdays: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
     addCity: 'Stad toevoegen', searchCity: 'Zoek een stad', savedSection: 'Opgeslagen', noMatches: 'Geen resultaten.', searchPrompt: 'Zoek hierboven om je eerste stad toe te voegen.', remove: 'Verwijderen', added: 'Toegevoegd', capacity: 'Je kunt maximaal {n} steden opslaan. Verwijder er een om een andere toe te voegen.', searchFailed: 'Zoeken mislukt.',
+    tempReference: 'Temperatuurreferentie',
     temperature: 'Temperatuur', language: 'Taal',
     locationError: 'Kan je locatie niet bepalen. Schakel locatietoegang in om lokaal weer te zien.', loadError: 'Er ging iets mis bij het laden van het weer.', tryAgain: 'Opnieuw proberen',
   },
@@ -239,6 +252,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nymåne', moonWaxingCrescent: 'Tilltagande skära', moonFirstQuarter: 'Första kvarteret', moonWaxingGibbous: 'Tilltagande halvmåne', moonFull: 'Fullmåne', moonWaningGibbous: 'Avtagande halvmåne', moonLastQuarter: 'Sista kvarteret', moonWaningCrescent: 'Avtagande skära',
     weekdays: ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'],
     addCity: 'Lägg till stad', searchCity: 'Sök efter en stad', savedSection: 'Sparade', noMatches: 'Inga träffar.', searchPrompt: 'Sök ovan för att lägga till din första stad.', remove: 'Ta bort', added: 'Tillagd', capacity: 'Du kan spara upp till {n} städer. Ta bort en för att lägga till en annan.', searchFailed: 'Sökningen misslyckades.',
+    tempReference: 'Temperaturreferens',
     temperature: 'Temperatur', language: 'Språk',
     locationError: 'Det gick inte att fastställa din plats. Aktivera platsåtkomst för att se lokalt väder.', loadError: 'Något gick fel när vädret laddades.', tryAgain: 'Försök igen',
   },
@@ -251,6 +265,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nymåne', moonWaxingCrescent: 'Voksende månesigd', moonFirstQuarter: 'Første kvarter', moonWaxingGibbous: 'Voksende halvmåne', moonFull: 'Fullmåne', moonWaningGibbous: 'Avtagende halvmåne', moonLastQuarter: 'Siste kvarter', moonWaningCrescent: 'Avtagende månesigd',
     weekdays: ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'],
     addCity: 'Legg til by', searchCity: 'Søk etter en by', savedSection: 'Lagrede', noMatches: 'Ingen treff.', searchPrompt: 'Søk ovenfor for å legge til din første by.', remove: 'Fjern', added: 'Lagt til', capacity: 'Du kan lagre opptil {n} byer. Fjern én for å legge til en annen.', searchFailed: 'Søket mislyktes.',
+    tempReference: 'Temperaturreferanse',
     temperature: 'Temperatur', language: 'Språk',
     locationError: 'Kunne ikke fastslå posisjonen din. Aktiver posisjonstilgang for å se lokalt vær.', loadError: 'Noe gikk galt under lasting av været.', tryAgain: 'Prøv igjen',
   },
@@ -263,6 +278,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nymåne', moonWaxingCrescent: 'Tiltagende månesegl', moonFirstQuarter: 'Første kvarter', moonWaxingGibbous: 'Tiltagende måne', moonFull: 'Fuldmåne', moonWaningGibbous: 'Aftagende måne', moonLastQuarter: 'Sidste kvarter', moonWaningCrescent: 'Aftagende månesegl',
     weekdays: ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'],
     addCity: 'Tilføj by', searchCity: 'Søg efter en by', savedSection: 'Gemte', noMatches: 'Ingen resultater.', searchPrompt: 'Søg ovenfor for at tilføje din første by.', remove: 'Fjern', added: 'Tilføjet', capacity: 'Du kan gemme op til {n} byer. Fjern en for at tilføje en anden.', searchFailed: 'Søgningen mislykkedes.',
+    tempReference: 'Temperaturreference',
     temperature: 'Temperatur', language: 'Sprog',
     locationError: 'Din placering kunne ikke bestemmes. Aktivér placeringsadgang for at se lokalt vejr.', loadError: 'Noget gik galt under indlæsning af vejret.', tryAgain: 'Prøv igen',
   },
@@ -275,6 +291,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Νέα Σελήνη', moonWaxingCrescent: 'Αύξουσα Ημισέληνος', moonFirstQuarter: 'Πρώτο Τέταρτο', moonWaxingGibbous: 'Αύξουσα Αμφίκυρτη', moonFull: 'Πανσέληνος', moonWaningGibbous: 'Φθίνουσα Αμφίκυρτη', moonLastQuarter: 'Τελευταίο Τέταρτο', moonWaningCrescent: 'Φθίνουσα Ημισέληνος',
     weekdays: ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'],
     addCity: 'Προσθήκη πόλης', searchCity: 'Αναζήτηση πόλης', savedSection: 'Αποθηκευμένες', noMatches: 'Καμία αντιστοιχία.', searchPrompt: 'Αναζητήστε παραπάνω για να προσθέσετε την πρώτη σας πόλη.', remove: 'Αφαίρεση', added: 'Προστέθηκε', capacity: 'Μπορείτε να αποθηκεύσετε έως {n} πόλεις. Αφαιρέστε μία για να προσθέσετε άλλη.', searchFailed: 'Η αναζήτηση απέτυχε.',
+    tempReference: 'Αναφορά θερμοκρασίας',
     temperature: 'Θερμοκρασία', language: 'Γλώσσα',
     locationError: 'Δεν ήταν δυνατός ο προσδιορισμός της τοποθεσίας σας. Ενεργοποιήστε την πρόσβαση τοποθεσίας για να δείτε τον τοπικό καιρό.', loadError: 'Παρουσιάστηκε σφάλμα κατά τη φόρτωση του καιρού.', tryAgain: 'Δοκιμάστε ξανά',
   },
@@ -287,6 +304,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Nów', moonWaxingCrescent: 'Przybywający sierp', moonFirstQuarter: 'Pierwsza kwadra', moonWaxingGibbous: 'Przybywający garbaty', moonFull: 'Pełnia', moonWaningGibbous: 'Ubywający garbaty', moonLastQuarter: 'Ostatnia kwadra', moonWaningCrescent: 'Ubywający sierp',
     weekdays: ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'],
     addCity: 'Dodaj miasto', searchCity: 'Szukaj miasta', savedSection: 'Zapisane', noMatches: 'Brak wyników.', searchPrompt: 'Wyszukaj powyżej, aby dodać pierwsze miasto.', remove: 'Usuń', added: 'Dodano', capacity: 'Możesz zapisać do {n} miast. Usuń jedno, aby dodać inne.', searchFailed: 'Wyszukiwanie nie powiodło się.',
+    tempReference: 'Odniesienie temperatury',
     temperature: 'Temperatura', language: 'Język',
     locationError: 'Nie można ustalić Twojej lokalizacji. Włącz dostęp do lokalizacji, aby zobaczyć lokalną pogodę.', loadError: 'Coś poszło nie tak podczas ładowania pogody.', tryAgain: 'Spróbuj ponownie',
   },
@@ -299,6 +317,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Новолуние', moonWaxingCrescent: 'Растущий серп', moonFirstQuarter: 'Первая четверть', moonWaxingGibbous: 'Растущая луна', moonFull: 'Полнолуние', moonWaningGibbous: 'Убывающая луна', moonLastQuarter: 'Последняя четверть', moonWaningCrescent: 'Убывающий серп',
     weekdays: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
     addCity: 'Добавить город', searchCity: 'Поиск города', savedSection: 'Сохранённые', noMatches: 'Нет совпадений.', searchPrompt: 'Найдите выше, чтобы добавить первый город.', remove: 'Удалить', added: 'Добавлено', capacity: 'Можно сохранить до {n} городов. Удалите один, чтобы добавить другой.', searchFailed: 'Ошибка поиска.',
+    tempReference: 'Справочник температур',
     temperature: 'Температура', language: 'Язык',
     locationError: 'Не удалось определить ваше местоположение. Включите доступ к геолокации, чтобы видеть местную погоду.', loadError: 'Не удалось загрузить погоду.', tryAgain: 'Повторить',
   },
@@ -311,6 +330,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     moonNew: 'Молодий місяць', moonWaxingCrescent: 'Зростаючий серп', moonFirstQuarter: 'Перша чверть', moonWaxingGibbous: 'Зростаючий місяць', moonFull: 'Повний місяць', moonWaningGibbous: 'Спадний місяць', moonLastQuarter: 'Остання чверть', moonWaningCrescent: 'Спадний серп',
     weekdays: ['неділя', 'понеділок', 'вівторок', 'середа', 'четвер', 'п’ятниця', 'субота'],
     addCity: 'Додати місто', searchCity: 'Пошук міста', savedSection: 'Збережені', noMatches: 'Немає збігів.', searchPrompt: 'Шукайте вище, щоб додати перше місто.', remove: 'Видалити', added: 'Додано', capacity: 'Можна зберегти до {n} міст. Видаліть одне, щоб додати інше.', searchFailed: 'Помилка пошуку.',
+    tempReference: 'Довідник температур',
     temperature: 'Температура', language: 'Мова',
     locationError: 'Не вдалося визначити ваше місцезнаходження. Увімкніть доступ до геолокації, щоб бачити місцеву погоду.', loadError: 'Не вдалося завантажити погоду.', tryAgain: 'Спробувати ще раз',
   },
@@ -335,8 +355,36 @@ export interface IapStrings {
   iapRestoreNone: string;
 }
 
-/** Combined strings exposed to the app (UI + permission + IAP strings). */
-export type FullStrings = Strings & PermStrings & IapStrings;
+/** Attribution screen strings. */
+export interface ExtraStrings {
+  attribution: string;
+  attributionIntro: string;
+}
+
+/** Combined strings exposed to the app (UI + permission + IAP + extra). */
+export type FullStrings = Strings & PermStrings & IapStrings & ExtraStrings;
+
+export const EXTRA_STRINGS: Record<LanguageCode, ExtraStrings> = {
+  en: { attribution: 'Attribution', attributionIntro: 'Weather data is provided by:' },
+  es: { attribution: 'Atribución', attributionIntro: 'Los datos meteorológicos son proporcionados por:' },
+  zh: { attribution: '归属声明', attributionIntro: '天气数据由以下服务提供：' },
+  ja: { attribution: '帰属表示', attributionIntro: '気象データの提供元：' },
+  de: { attribution: 'Danksagungen', attributionIntro: 'Wetterdaten bereitgestellt von:' },
+  fr: { attribution: 'Attributions', attributionIntro: 'Données météo fournies par :' },
+  pt: { attribution: 'Atribuição', attributionIntro: 'Dados meteorológicos fornecidos por:' },
+  ko: { attribution: '저작자 표시', attributionIntro: '날씨 데이터 제공:' },
+  ar: { attribution: 'الإسناد', attributionIntro: 'بيانات الطقس مقدمة من:' },
+  hi: { attribution: 'एट्रिब्यूशन', attributionIntro: 'मौसम डेटा प्रदाता:' },
+  it: { attribution: 'Attribuzioni', attributionIntro: 'Dati meteo forniti da:' },
+  nl: { attribution: 'Naamsvermelding', attributionIntro: 'Weergegevens geleverd door:' },
+  sv: { attribution: 'Attribuering', attributionIntro: 'Väderdata tillhandahålls av:' },
+  no: { attribution: 'Kreditering', attributionIntro: 'Værdata levert av:' },
+  da: { attribution: 'Kreditering', attributionIntro: 'Vejrdata leveret af:' },
+  el: { attribution: 'Απόδοση', attributionIntro: 'Τα δεδομένα καιρού παρέχονται από:' },
+  pl: { attribution: 'Atrybucja', attributionIntro: 'Dane pogodowe dostarczają:' },
+  ru: { attribution: 'Атрибуция', attributionIntro: 'Данные о погоде предоставлены:' },
+  uk: { attribution: 'Атрибуція', attributionIntro: 'Дані про погоду надано:' },
+};
 
 export const IAP_STRINGS: Record<LanguageCode, IapStrings> = {
   en: { iapRemoveAds: 'Remove ads', iapTagline: 'Enjoy the weather without the banner', iapRestore: 'Restore purchase', iapOwned: 'Ads removed — thank you!', iapRestoreNone: 'No previous purchase found.' },

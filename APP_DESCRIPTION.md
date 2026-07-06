@@ -87,15 +87,24 @@ Greek, Polish, Russian, Ukrainian.
 - Icons: `@expo/vector-icons` (FontAwesome). Graphics: `react-native-svg`
   (sun arc, moon) via `react-native-svg-transformer` for the moon SVG asset.
 
-### Data sources (dual provider)
-- **US locations → NWS** (`api.weather.gov`, free, no key) to spare the WeatherAPI
-  quota. **Everywhere else → WeatherAPI.com**. The provider is chosen offline by a
-  bundled US outline (point‑in‑polygon); NWS failures fall back to WeatherAPI.
-- **WeatherAPI.com** (`/forecast.json`, `/search.json` for city autocomplete). Key
-  via `EXPO_PUBLIC_WEATHERAPI_KEY`; condition text localized server‑side via `lang`.
-- **NWS** provides forecast/hourly/daily; astronomy (sun/moon) is computed locally
-  with `suncalc`, feels‑like via NOAA formulas, and condition text is localized in‑app
-  (NWS is English‑only). See `src/services/{weather,nwsApi,usGeo,astronomy}.ts`.
+### Data sources (pluggable national providers + fallback)
+- Free national services are used where available to spare the WeatherAPI quota;
+  everywhere else falls back to WeatherAPI. The provider is chosen **offline** by
+  bundled country outlines (point‑in‑polygon), and any provider failure falls
+  through to WeatherAPI.
+  - **US → NWS** (`api.weather.gov`, free, no key)
+  - **France → Météo‑France** (free mobile‑app forecast API, shared token)
+  - **Germany → DWD via Bright Sky** (`api.brightsky.dev`, free, no key)
+  - **Norway, Sweden, Denmark, Finland, UK, Ireland, Netherlands, Belgium,
+    Switzerland, Austria, Italy, Spain, Portugal, Poland, Czechia → MET Norway**
+    (`api.met.no`, free, official, no key — attribution: "Weather data from MET Norway")
+  - **Elsewhere → WeatherAPI.com** (key via `EXPO_PUBLIC_WEATHERAPI_KEY`)
+- Registry lives in `src/services/providers.ts`; router in `src/services/weather.ts`;
+  region tests in `src/services/geo.ts` (+ `src/data/*Outline.json`). Adding a country
+  = outline + `isIn…` test + a `fetch…Forecast` client + one registry entry.
+- Astronomy (sun/moon) is computed locally with `suncalc` for all providers;
+  national providers' condition text is localized in‑app (they're not multilingual).
+- WeatherAPI still powers **city search** (`/search.json`).
 
 ### App structure
 ```

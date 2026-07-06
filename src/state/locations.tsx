@@ -207,9 +207,11 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       // tab passes its "lat,lon" so US coords can be detected offline.
       let coords: { lat: number; lon: number } | null = null;
       let country: string | null = null;
+      let place: string | null = null;
       if (ref.kind === 'city') {
         coords = { lat: ref.city.lat, lon: ref.city.lon };
         country = ref.city.country;
+        place = ref.city.name;
       } else {
         const m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(query.trim());
         if (m) coords = { lat: Number(m[1]), lon: Number(m[2]) };
@@ -217,7 +219,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
 
       inFlight.current.add(key);
       try {
-        const data = await fetchWeather({ query, coords, country, language });
+        const data = await fetchWeather({ query, coords, country, place, language });
         if (__DEV__ && ref.kind === 'current') {
           console.log(
             `[loc] query="${query}" -> "${data.location.name}" ` +

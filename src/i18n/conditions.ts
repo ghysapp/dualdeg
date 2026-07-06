@@ -97,6 +97,140 @@ export function conditionText(key: ConditionKey, language: LanguageCode): string
   return (CONDITION_STRINGS[language] ?? CONDITION_STRINGS.en)[key];
 }
 
+// --- MET Norway (yr.no) mapping --------------------------------------------
+// Symbol codes like "partlycloudy_night", "lightrainshowers_day",
+// "heavyrainandthunder". Strip the _day/_night suffix, then keyword-match.
+export function conditionFromMetNo(
+  symbolCode: string | null | undefined,
+  isDay: boolean,
+): ResolvedCondition {
+  const s = (symbolCode ?? '').toLowerCase().replace(/_(day|night|polartwilight)$/, '');
+  let key: ConditionKey;
+  if (!s) key = FALLBACK.key;
+  else if (s.includes('thunder')) key = 'thunderstorm';
+  else if (s.includes('sleet')) key = 'sleet';
+  else if (s.includes('snow')) key = 'snow';
+  else if (s.includes('shower')) key = 'showers';
+  else if (s.includes('rain')) key = s.includes('light') ? 'showers' : 'rain';
+  else if (s.includes('fog')) key = 'fog';
+  else if (s === 'cloudy') key = 'cloudy';
+  else if (s === 'partlycloudy') key = 'partlyCloudy';
+  else if (s === 'fair' || s === 'clearsky') key = 'clear';
+  else key = FALLBACK.key;
+  if (key === 'clear' && isDay) key = 'sunny';
+  return { code: KEY_TO_CODE[key], key };
+}
+
+// --- Météo-France mapping ---------------------------------------------------
+// Representative WeatherAPI code per key (for emoji + sky theme).
+const KEY_TO_CODE: Record<ConditionKey, number> = {
+  sunny: 1000,
+  clear: 1000,
+  partlyCloudy: 1003,
+  mostlyCloudy: 1006,
+  cloudy: 1009,
+  fog: 1135,
+  windy: 1000,
+  showers: 1063,
+  rain: 1189,
+  thunderstorm: 1087,
+  snow: 1219,
+  sleet: 1069,
+  hot: 1000,
+  cold: 1000,
+};
+
+// Météo-France icon base (suffix j/n and "bis" stripped) → condition key.
+const MF_ICON_MAP: Record<string, ConditionKey> = {
+  p1: 'clear',
+  p2: 'partlyCloudy',
+  p3: 'partlyCloudy',
+  p4: 'mostlyCloudy',
+  p5: 'cloudy',
+  p6: 'fog',
+  p7: 'fog',
+  p8: 'fog',
+  p9: 'showers',
+  p10: 'rain',
+  p11: 'rain',
+  p12: 'showers',
+  p13: 'showers',
+  p14: 'rain',
+  p15: 'showers',
+  p16: 'thunderstorm',
+  p17: 'thunderstorm',
+  p18: 'thunderstorm',
+  p19: 'thunderstorm',
+  p20: 'snow',
+  p21: 'snow',
+  p22: 'snow',
+  p23: 'sleet',
+  p24: 'sleet',
+  p25: 'sleet',
+  p26: 'thunderstorm',
+  p27: 'thunderstorm',
+  p28: 'thunderstorm',
+  p29: 'thunderstorm',
+};
+
+/** Fallback: map an EN/FR condition phrase to a key when the icon is unknown. */
+function keyFromPhrase(desc: string): ConditionKey | null {
+  const d = desc.toLowerCase();
+  if (/orage|thunder/.test(d)) return 'thunderstorm';
+  if (/verglas|sleet|freezing|pluie et neige|neige mê/.test(d)) return 'sleet';
+  if (/neige|snow/.test(d)) return 'snow';
+  if (/averse|shower/.test(d)) return 'showers';
+  if (/pluie|rain|bruine|drizzle/.test(d)) return 'rain';
+  if (/brouillard|brume|fog|mist/.test(d)) return 'fog';
+  if (/couvert|overcast|très nuageux|very cloud/.test(d)) return 'cloudy';
+  if (/nuageux|nuage|cloud/.test(d)) return /peu|partly|éclairc/.test(d) ? 'partlyCloudy' : 'mostlyCloudy';
+  if (/clair|clear|soleil|sunny|ensoleill|dégag/.test(d)) return 'clear';
+  return null;
+}
+
+// --- Bright Sky / DWD mapping ----------------------------------------------
+// Bright Sky uses Dark-Sky-style icons (day/night encoded in the suffix).
+const BRIGHTSKY_ICON_MAP: Record<string, ConditionKey> = {
+  'clear-day': 'sunny',
+  'clear-night': 'clear',
+  'partly-cloudy-day': 'partlyCloudy',
+  'partly-cloudy-night': 'partlyCloudy',
+  cloudy: 'cloudy',
+  fog: 'fog',
+  wind: 'windy',
+  rain: 'rain',
+  sleet: 'sleet',
+  snow: 'snow',
+  hail: 'sleet',
+  thunderstorm: 'thunderstorm',
+};
+
+export function conditionFromBrightSky(
+  icon: string | null | undefined,
+  desc: string | null | undefined,
+): ResolvedCondition {
+  let key: ConditionKey | null = icon ? (BRIGHTSKY_ICON_MAP[icon] ?? null) : null;
+  if (!key) key = keyFromPhrase(desc ?? '');
+  if (!key) key = FALLBACK.key;
+  return { code: KEY_TO_CODE[key], key };
+}
+
+export function conditionFromMeteoFrance(
+  icon: string | null | undefined,
+  desc: string | null | undefined,
+  isDay: boolean,
+): ResolvedCondition {
+  let key: ConditionKey | null = null;
+  if (icon) {
+    const base = icon.toLowerCase().replace('bis', '').replace(/[jn]$/, '');
+    key = MF_ICON_MAP[base] ?? null;
+  }
+  if (!key) key = keyFromPhrase(desc ?? '');
+  if (!key) key = FALLBACK.key;
+  if (key === 'clear' && isDay) key = 'sunny';
+  return { code: KEY_TO_CODE[key], key };
+}
+
 type ConditionTable = Record<ConditionKey, string>;
 
 const CONDITION_STRINGS: Record<LanguageCode, ConditionTable> = {

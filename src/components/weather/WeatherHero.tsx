@@ -20,7 +20,8 @@ export function WeatherHero({ data, sky }: { data: WeatherData; sky: SkyTheme })
 
       <View style={styles.center}>
         <Text style={[styles.place, { color: sky.textPrimary }]} numberOfLines={1}>
-          {location.name} · {current.conditionText}
+          {location.name ? `${location.name} · ` : ''}
+          {current.conditionText}
         </Text>
 
         {/* Primary number with its unit as a superscript (aligned to the top of

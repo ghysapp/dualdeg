@@ -15,6 +15,7 @@ import {
 
 import { loadJson, saveJson } from '@/services/cache';
 import {
+  EXTRA_STRINGS,
   IAP_STRINGS,
   PERMISSION_STRINGS,
   RTL_LANGUAGES,
@@ -81,6 +82,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         ...(TRANSLATIONS[settings.language] ?? TRANSLATIONS.en),
         ...(PERMISSION_STRINGS[settings.language] ?? PERMISSION_STRINGS.en),
         ...(IAP_STRINGS[settings.language] ?? IAP_STRINGS.en),
+        ...(EXTRA_STRINGS[settings.language] ?? EXTRA_STRINGS.en),
       },
       isRTL: RTL_LANGUAGES.includes(settings.language),
       ready,

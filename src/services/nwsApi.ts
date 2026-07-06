@@ -13,6 +13,8 @@
 import { NWS_API_BASE, NWS_USER_AGENT } from '@/config';
 import { computeAstro } from '@/services/astronomy';
 import { conditionFromIcon, conditionText } from '@/i18n/conditions';
+import { dateInTz, localNow } from '@/utils/tz';
+import { cToF, feelsLikeC } from '@/utils/units';
 import type { LanguageCode } from '@/i18n/translations';
 import {
   WeatherApiError,
@@ -26,7 +28,6 @@ import {
 // ---------------------------------------------------------------------------
 
 const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
-const cToF = (c: number) => (c * 9) / 5 + 32;
 
 async function nws<T = any>(url: string): Promise<T> {
   let res: Response;
@@ -47,30 +48,6 @@ function parseWindKph(s: string | null | undefined): number {
   return nums ? Number(nums[nums.length - 1]) : 0;
 }
 
-/** Apparent temperature (°C) from NOAA heat-index / wind-chill, else air temp. */
-function computeFeelsLike(tempC: number, humidity: number, windKph: number): number {
-  if (tempC >= 27 && humidity > 0) {
-    const T = cToF(tempC);
-    const R = humidity;
-    const hi =
-      -42.379 +
-      2.04901523 * T +
-      10.14333127 * R -
-      0.22475541 * T * R -
-      6.83783e-3 * T * T -
-      5.481717e-2 * R * R +
-      1.22874e-3 * T * T * R +
-      8.5282e-4 * T * R * R -
-      1.99e-6 * T * T * R * R;
-    return ((hi - 32) * 5) / 9;
-  }
-  if (tempC <= 10 && windKph >= 4.8) {
-    const v = Math.pow(windKph, 0.16);
-    return 13.12 + 0.6215 * tempC - 11.37 * v + 0.3965 * tempC * v;
-  }
-  return tempC;
-}
-
 function weekdayIndexOf(date: string): number {
   const [y, m, d] = date.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
@@ -82,16 +59,6 @@ function parseDurationMs(iso: string): number {
   if (!m) return 3600000;
   const [, d, h, min] = m;
   return ((Number(d || 0) * 24 + Number(h || 0)) * 60 + Number(min || 0)) * 60000;
-}
-
-/** Local "YYYY-MM-DD" for an epoch, in the given timezone. */
-function localDateInTz(ms: number, tz: string): string {
-  const opts: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
-  try {
-    return new Intl.DateTimeFormat('en-CA', { ...opts, timeZone: tz }).format(new Date(ms));
-  } catch {
-    return new Intl.DateTimeFormat('en-CA', opts).format(new Date(ms));
-  }
 }
 
 /**
@@ -115,32 +82,13 @@ function precipFromGrid(
     const startMs = new Date(startIso).getTime();
     if (!Number.isFinite(startMs)) continue;
     const endMs = startMs + parseDurationMs(dur);
-    if (localDateInTz(startMs, tz) === todayDate) today += v.value;
+    if (dateInTz(startMs, tz) === todayDate) today += v.value;
     if (nowMs >= startMs && nowMs < endMs) current = v.value;
   }
   return { today: Math.round(today * 10) / 10, current: Math.round(current * 10) / 10 };
 }
 
 /** Wall-clock "YYYY-MM-DD HH:MM" in the location's timezone. */
-function localNow(tz: string): string {
-  const opts: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  };
-  let parts: Intl.DateTimeFormatPart[];
-  try {
-    parts = new Intl.DateTimeFormat('en-CA', { ...opts, timeZone: tz }).formatToParts(new Date());
-  } catch {
-    parts = new Intl.DateTimeFormat('en-CA', opts).formatToParts(new Date());
-  }
-  const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
-  return `${g('year')}-${g('month')}-${g('day')} ${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`;
-}
-
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -182,7 +130,7 @@ export async function fetchNwsForecast(
     const isDay = !!p.isDaytime;
     const humidity = p.relativeHumidity?.value ?? 0;
     const windKph = parseWindKph(p.windSpeed);
-    const flC = computeFeelsLike(p.temperature, humidity, windKph);
+    const flC = feelsLikeC(p.temperature, humidity, windKph);
     return {
       timeEpoch: Math.floor(new Date(p.startTime).getTime() / 1000),
       hour24: Number(String(p.startTime).slice(11, 13)),
@@ -248,7 +196,7 @@ export async function fetchNwsForecast(
   const curIsDay = !!h0.isDaytime;
   const curHumidity = h0.relativeHumidity?.value ?? 0;
   const curWindKph = parseWindKph(h0.windSpeed);
-  const curFlC = computeFeelsLike(h0.temperature ?? 0, curHumidity, curWindKph);
+  const curFlC = feelsLikeC(h0.temperature ?? 0, curHumidity, curWindKph);
   const curCond = conditionFromIcon(h0.icon, curIsDay);
 
   return {
