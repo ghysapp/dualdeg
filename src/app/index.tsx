@@ -12,12 +12,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DailyOutlook } from '@/components/weather/DailyOutlook';
-import { HourlyStrip } from '@/components/weather/HourlyStrip';
-import { MetricGrid } from '@/components/weather/MetricGrid';
 import { BannerAdBar } from '@/components/ads/BannerAdBar';
 import { ApproxLocationBanner } from '@/components/weather/ApproxLocationBanner';
+import { DailyOutlook } from '@/components/weather/DailyOutlook';
+import { HourlyStrip } from '@/components/weather/HourlyStrip';
 import { LocationPrimingModal } from '@/components/weather/LocationPrimingModal';
+import { MetricGrid } from '@/components/weather/MetricGrid';
 import { SkyBackground } from '@/components/weather/SkyBackground';
 import { SunMoonSection } from '@/components/weather/SunMoonSection';
 import { TabStrip } from '@/components/weather/TabStrip';
@@ -103,8 +103,8 @@ export default function HomeScreen() {
             </>
           ) : null}
         </ScrollView>
-
         <BannerAdBar sky={sky} />
+        {/* Temporarily hidden — <BannerAdBar sky={sky} /> */}
       </SafeAreaView>
 
       <LocationPrimingModal />

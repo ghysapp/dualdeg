@@ -43,3 +43,8 @@ example
 # generated native folders
 /ios
 /android
+
+# Release signing (injected into android/app/build.gradle by
+# plugins/withAndroidSigning.js on every prebuild — see that file)
+/keystore.properties
+/dualdeg-release.keystore
