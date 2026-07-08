@@ -24,7 +24,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "com.google.android.gms.permission.AD_ID"
       ],
-      "package": "com.ghysapp.dualdeg"
+      "package": "com.ghysapp.dualdeg",
+      "versionCode": 2
     },
     "web": {
       "output": "static",
