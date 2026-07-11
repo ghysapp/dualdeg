@@ -25,7 +25,7 @@
         "com.google.android.gms.permission.AD_ID"
       ],
       "package": "com.ghysapp.dualdeg",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "output": "static",
