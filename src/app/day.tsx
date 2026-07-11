@@ -16,7 +16,7 @@ import { useSettings } from '@/state/settings';
 import { Font } from '@/theme/fonts';
 import { weatherEmoji } from '@/theme/icons';
 import { skyForDay, type SkyTheme } from '@/theme/sky';
-import { orderTemp, orderWind } from '@/utils/temperature';
+import { orderTemp, orderWind, precipDual } from '@/utils/temperature';
 import { timeToMinutes, to24h } from '@/utils/time';
 
 export default function DayScreen() {
@@ -190,7 +190,7 @@ function DayMetrics({ day, sky, strings }: { day: DayForecast; sky: SkyTheme; st
   cards.push({
     label: strings.precip,
     val: `${day.chanceOfRain}%`,
-    sub: day.totalPrecipMm != null ? `${day.totalPrecipMm.toFixed(1)} mm` : '',
+    sub: day.totalPrecipMm != null ? precipDual(day.totalPrecipMm, tempOrder) : '',
   });
   if (day.uv != null) {
     cards.push({ label: 'UV', val: `${day.uv}`, sub: 'of 11' });

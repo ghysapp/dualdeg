@@ -7,7 +7,7 @@ import type { WeatherData } from '@/services/weatherApi';
 import { useSettings, type TempOrder } from '@/state/settings';
 import { Font } from '@/theme/fonts';
 import type { SkyTheme } from '@/theme/sky';
-import { orderWind } from '@/utils/temperature';
+import { orderWind, precipDual } from '@/utils/temperature';
 
 const GAP = 8;
 const PADDING_H = 16;
@@ -50,7 +50,7 @@ function buildMetrics(data: WeatherData, strings: Strings, tempOrder: TempOrder)
     {
       label: strings.precip,
       val: `${today.chanceOfRain}%`,
-      sub: `${today.precipMm.toFixed(1)} mm`,
+      sub: precipDual(today.precipMm, tempOrder),
     },
   ];
 }

@@ -1,7 +1,7 @@
 /** Temperature ordering helpers driven by the user's unit-order preference. */
 
 import type { TempOrder } from '@/state/settings';
-import { kphToMph } from '@/utils/units';
+import { kphToMph, mmToIn } from '@/utils/units';
 
 export interface OrderedTemp {
   primaryValue: number;
@@ -46,4 +46,14 @@ export function orderWind(kph: number, order: TempOrder): OrderedWind {
   return order === 'FC'
     ? { primaryValue: mi.value, primaryUnit: mi.unit, secondaryValue: km.value, secondaryUnit: km.unit }
     : { primaryValue: km.value, primaryUnit: km.unit, secondaryValue: mi.value, secondaryUnit: mi.unit };
+}
+
+/**
+ * Precipitation as "4.3 mm · 0.17 in" (or reversed for FC), following the same
+ * metric-first-when-°C-leads rule as wind.
+ */
+export function precipDual(mm: number, order: TempOrder): string {
+  const metric = `${mm.toFixed(1)} mm`;
+  const imperial = `${mmToIn(mm).toFixed(2)} in`;
+  return order === 'FC' ? `${imperial} · ${metric}` : `${metric} · ${imperial}`;
 }
