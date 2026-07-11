@@ -16,7 +16,7 @@ import { useSettings } from '@/state/settings';
 import { Font } from '@/theme/fonts';
 import { weatherEmoji } from '@/theme/icons';
 import { skyForDay, type SkyTheme } from '@/theme/sky';
-import { orderTemp } from '@/utils/temperature';
+import { orderTemp, orderWind } from '@/utils/temperature';
 import { timeToMinutes, to24h } from '@/utils/time';
 
 export default function DayScreen() {
@@ -180,10 +180,11 @@ function DayMetrics({ day, sky, strings }: { day: DayForecast; sky: SkyTheme; st
     cards.push({ label: strings.humidity, val: `${day.avgHumidity}%`, sub });
   }
   if (day.maxWindKph != null) {
+    const wind = orderWind(day.maxWindKph, tempOrder);
     cards.push({
       label: strings.wind,
-      val: `${day.maxWindKph}`,
-      sub: `km/h ${day.windDir ?? ''}`.trim(),
+      val: `${wind.primaryValue} ${wind.primaryUnit}`,
+      sub: `${wind.secondaryValue} ${wind.secondaryUnit}${day.windDir ? ` · ${day.windDir}` : ''}`,
     });
   }
   cards.push({

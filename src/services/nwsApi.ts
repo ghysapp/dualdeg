@@ -89,17 +89,25 @@ function precipFromGrid(
   return { today: Math.round(today * 10) / 10, current: Math.round(current * 10) / 10 };
 }
 
-/** Total precip (mm) for a single local date from the gridpoints series. */
+/**
+ * Total precip (mm) for a single local date from the gridpoints series, or
+ * `undefined` when the date lies beyond the QPF grid's horizon (NWS only
+ * publishes quantitative precipitation for ~2–3 days, while the chance-of-rain
+ * runs a full week — so far days have no amount and must not report a fake 0).
+ */
 function precipForDate(grid: any, tz: string, date: string): number | undefined {
   const values = grid?.properties?.quantitativePrecipitation?.values;
   if (!Array.isArray(values)) return undefined;
   let total = 0;
+  let covered = false;
   for (const v of values) {
-    if (v?.value == null || !v.validTime) continue;
+    if (!v?.validTime) continue;
     const startMs = new Date(String(v.validTime).split('/')[0]).getTime();
-    if (Number.isFinite(startMs) && dateInTz(startMs, tz) === date) total += v.value;
+    if (!Number.isFinite(startMs) || dateInTz(startMs, tz) !== date) continue;
+    covered = true;
+    total += v.value ?? 0;
   }
-  return Math.round(total * 10) / 10;
+  return covered ? Math.round(total * 10) / 10 : undefined;
 }
 
 /** Wall-clock "YYYY-MM-DD HH:MM" in the location's timezone. */

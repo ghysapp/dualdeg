@@ -2,6 +2,8 @@
 
 export const cToF = (c: number): number => (c * 9) / 5 + 32;
 
+export const kphToMph = (kph: number): number => kph / 1.609344;
+
 const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
 
 export function degToCompass(deg: number | null | undefined): string {

@@ -4,9 +4,10 @@ import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import { TempDual } from '@/components/weather/Temp';
 import type { Strings } from '@/i18n/translations';
 import type { WeatherData } from '@/services/weatherApi';
-import { useSettings } from '@/state/settings';
+import { useSettings, type TempOrder } from '@/state/settings';
 import { Font } from '@/theme/fonts';
 import type { SkyTheme } from '@/theme/sky';
+import { orderWind } from '@/utils/temperature';
 
 const GAP = 8;
 const PADDING_H = 16;
@@ -19,8 +20,9 @@ interface Metric {
   sub: string;
 }
 
-function buildMetrics(data: WeatherData, strings: Strings): Metric[] {
+function buildMetrics(data: WeatherData, strings: Strings, tempOrder: TempOrder): Metric[] {
   const { current, today } = data;
+  const wind = orderWind(current.windKph, tempOrder);
 
   const feelsDelta = current.feelsLikeC - current.tempC;
   const feelsSub =
@@ -40,7 +42,11 @@ function buildMetrics(data: WeatherData, strings: Strings): Metric[] {
       sub: feelsSub,
     },
     { label: strings.humidity, val: `${current.humidity}%`, sub: humSub },
-    { label: strings.wind, val: `${current.windKph}`, sub: `km/h ${current.windDir}` },
+    {
+      label: strings.wind,
+      val: `${wind.primaryValue} ${wind.primaryUnit}`,
+      sub: `${wind.secondaryValue} ${wind.secondaryUnit}${current.windDir ? ` · ${current.windDir}` : ''}`,
+    },
     {
       label: strings.precip,
       val: `${today.chanceOfRain}%`,
@@ -51,7 +57,7 @@ function buildMetrics(data: WeatherData, strings: Strings): Metric[] {
 
 export function MetricGrid({ data, sky }: { data: WeatherData; sky: SkyTheme }) {
   const { strings, tempOrder } = useSettings();
-  const metrics = buildMetrics(data, strings);
+  const metrics = buildMetrics(data, strings, tempOrder);
   const [rowWidth, setRowWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setRowWidth(e.nativeEvent.layout.width);
 

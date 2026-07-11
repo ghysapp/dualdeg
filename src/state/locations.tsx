@@ -92,6 +92,8 @@ interface LocationsContextValue {
   permission: LocationPermission;
   /** True when the current tab is using an IP-derived approximate location. */
   approximate: boolean;
+  /** Reverse-geocoded name of the current location (e.g. "Oslo"), or null. */
+  currentPlaceName: string | null;
   /** Whether the custom pre-permission dialog is showing. */
   primingVisible: boolean;
   /** Dialog "Next" → proceeds to the OS prompt, then GPS or approximate. */
@@ -109,7 +111,8 @@ const IDLE: WeatherEntry = { status: 'idle', refreshing: false };
 // Bump when the cached WeatherData shape changes, to invalidate old entries.
 // v4: "Next N days" expanded from 2 to up to 7 days.
 // v5: per-day detail (hourly, astronomy, metrics) added for the day screen.
-const CACHE_VERSION = 'v5';
+// v6: NWS far-day precip reports "no data" instead of a fake 0 mm.
+const CACHE_VERSION = 'v6';
 
 // Pull-to-refresh is ignored if the location was fetched within this window.
 const MANUAL_REFRESH_COOLDOWN = 5 * 60 * 1000;
@@ -135,9 +138,14 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
   const [approximate, setApproximate] = useState(false);
   const [permission, setPermission] = useState<LocationPermission>('unknown');
   const [primingVisible, setPrimingVisible] = useState(false);
+  // Reverse-geocoded name of the current GPS fix (e.g. "Oslo"), so the current
+  // tab shows a place name even for providers that don't return one.
+  const [currentPlaceName, setCurrentPlaceName] = useState<string | null>(null);
 
   // De-dupes concurrent fetches per location. Read only inside callbacks.
   const inFlight = useRef<Set<string>>(new Set());
+  // Monotonic token so only the newest reverse-geocode result is applied.
+  const geocodeToken = useRef(0);
 
   const setEntry = useCallback((key: string, patch: Partial<WeatherEntry>) => {
     setEntries((prev) => ({
@@ -260,8 +268,31 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
   );
 
   // --- Location sources --------------------------------------------------
+  /**
+   * Best-effort reverse geocode of a GPS fix, via the OS geocoder (Apple on
+   * iOS, Android's Geocoder). Used only to label the current tab; failures or
+   * an absent geocoder are ignored, leaving the provider name / "Current" as
+   * the fallback. A token guards against a stale fix overwriting a newer one.
+   */
+  const resolvePlaceName = useCallback(async (lat: number, lon: number) => {
+    const token = ++geocodeToken.current;
+    try {
+      const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+      if (geocodeToken.current !== token) return; // superseded by a newer fix
+      const a = results[0];
+      const name = a?.city || a?.subregion || a?.district || a?.region || null;
+      if (name) setCurrentPlaceName(name);
+    } catch {
+      // OS geocoder unavailable / rate-limited — keep the fallback label.
+    }
+  }, []);
+
   /** Approximate location from IP. Used when GPS isn't available/granted. */
   const acquireApproximate = useCallback(async () => {
+    // No precise coords here, so drop any GPS-derived name and let the provider
+    // supply the place name for the postal code.
+    geocodeToken.current++;
+    setCurrentPlaceName(null);
     const zip = await getZipcodeFromIP();
     if (zip) {
       setApproximate(true);
@@ -284,6 +315,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       const q = `${lat},${lon}`;
       setApproximate(false);
       setCurrentQuery(q);
+      resolvePlaceName(lat, lon);
       ensureFresh({ kind: 'current' }, true, q);
     };
 
@@ -326,7 +358,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
 
     // 3. Only use the IP-based approximate location if we got no device fix at all.
     if (!got) await acquireApproximate();
-  }, [ensureFresh, acquireApproximate]);
+  }, [ensureFresh, acquireApproximate, resolvePlaceName]);
 
   // --- Permission flow ---------------------------------------------------
   // Resolve the current location once on mount. We check status WITHOUT
@@ -535,6 +567,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     canAddMore: cities.length < MAX_SAVED_CITIES,
     permission,
     approximate,
+    currentPlaceName,
     primingVisible,
     primingNext,
     primingDismiss,
