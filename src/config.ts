@@ -49,8 +49,15 @@ export const GEOIP_API_URL = process.env.EXPO_PUBLIC_GEOIP_API_URL ?? '';
 export const GEOIP_API_KEY = process.env.EXPO_PUBLIC_GEOIP_API_KEY ?? '';
 export const HAS_GEOIP = GEOIP_API_URL.length > 0;
 
-/** Number of forecast days to request (today + 2 = the design's "next 2 days"). */
-export const FORECAST_DAYS = 3;
+/**
+ * Maximum number of *future* forecast days to display in the "Next N days"
+ * section. Providers supply fewer when that's all they have (WeatherAPI's free
+ * tier caps at 2, NWS ~6); the daily list renders however many come back.
+ */
+export const MAX_FUTURE_DAYS = 7;
+
+/** Number of forecast days to request from WeatherAPI (today + the future days). */
+export const FORECAST_DAYS = MAX_FUTURE_DAYS + 1;
 
 /** Cache freshness windows, in milliseconds. */
 export const CACHE_TTL = {
@@ -59,6 +66,13 @@ export const CACHE_TTL = {
   /** Saved cities refresh if older than 6 hours. */
   saved: 6 * 60 * 60 * 1000,
 } as const;
+
+/**
+ * When the app returns to the foreground after being backgrounded for at least
+ * this long, the visible tab is refreshed so we never show stale (e.g. day-old)
+ * weather from a previous session.
+ */
+export const BACKGROUND_REFRESH_THRESHOLD = 10 * 60 * 1000;
 
 /** Maximum number of saved cities (the design shows up to 4 alongside Current). */
 export const MAX_SAVED_CITIES = 4;

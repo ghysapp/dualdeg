@@ -185,5 +185,14 @@ export function skyByKey(key: SkyKey): SkyTheme {
   return SKY[key];
 }
 
+/**
+ * Palette for a future day's detail screen. A whole day is best shown as a
+ * daytime scene, so we pick between the bright and the muted daytime palettes
+ * by the day's overall condition (no time-of-day or night variants).
+ */
+export function skyForDay(conditionCode: number): SkyTheme {
+  return isGloomy(conditionCode) ? SKY.overcast : SKY.day;
+}
+
 /** Neutral palette used before any data has loaded. */
 export const LOADING_SKY = SKY.day;

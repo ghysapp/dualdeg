@@ -9,11 +9,12 @@
  * name (met.no returns none) is passed in for saved cities.
  */
 
-import { METNO_API_BASE, METNO_USER_AGENT } from '@/config';
+import { MAX_FUTURE_DAYS, METNO_API_BASE, METNO_USER_AGENT } from '@/config';
 import { conditionFromMetNo, conditionText } from '@/i18n/conditions';
 import type { LanguageCode } from '@/i18n/translations';
 import { computeAstro } from '@/services/astronomy';
 import {
+  summarizeDayHours,
   WeatherApiError,
   type DayForecast,
   type HourForecast,
@@ -73,11 +74,7 @@ export async function fetchMetNoForecast(
 
   const detailsOf = (e: any) => e?.data?.instant?.details ?? {};
 
-  // --- Hourly (current hour onward, 24) ---
-  const future = series.filter((e) => Date.parse(e.time) + 3600_000 > now);
-  const slice = (future.length ? future : series).slice(0, 24);
-
-  const hours: HourForecast[] = slice.map((e, i) => {
+  const toHour = (e: any, isNow: boolean): HourForecast => {
     const ms = Date.parse(e.time);
     const hour24 = hourInTz(ms, tz);
     const symbol = symbolOf(e);
@@ -90,7 +87,7 @@ export async function fetchMetNoForecast(
     return {
       timeEpoch: Math.floor(ms / 1000),
       hour24,
-      isNow: i === 0,
+      isNow,
       tempC: Math.round(tC),
       tempF: Math.round(cToF(tC)),
       feelsLikeC: Math.round(flC),
@@ -100,7 +97,13 @@ export async function fetchMetNoForecast(
       isDay,
       chanceOfRain: Math.round(popOf(e)),
     };
-  });
+  };
+
+  // --- Hourly (current hour onward, 24) ---
+  const future = series.filter((e) => Date.parse(e.time) + 3600_000 > now);
+  const slice = (future.length ? future : series).slice(0, 24);
+
+  const hours: HourForecast[] = slice.map((e, i) => toHour(e, i === 0));
 
   // --- Group by local date for daily + today aggregates ---
   const byDate = new Map<string, any[]>();
@@ -121,8 +124,18 @@ export async function fetchMetNoForecast(
   };
 
   const futureDays = [...byDate.keys()].filter((d) => d > todayDate).sort();
-  const days: DayForecast[] = futureDays.slice(0, 2).map((d, i) => {
-    const a = aggregate(byDate.get(d)!);
+  const days: DayForecast[] = futureDays.slice(0, MAX_FUTURE_DAYS).map((d, i) => {
+    const list = byDate.get(d)!;
+    const a = aggregate(list);
+    const dayHours = list.map((e) => toHour(e, false));
+    const summary = summarizeDayHours(dayHours);
+    const windiest = list.reduce(
+      (x, y) => ((detailsOf(y).wind_speed ?? 0) > (detailsOf(x).wind_speed ?? 0) ? y : x),
+      list[0],
+    );
+    const noon = list.find((e) => hourInTz(Date.parse(e.time), tz) === 12) ?? list[Math.floor(list.length / 2)] ?? list[0];
+    const cond = conditionFromMetNo(symbolOf(noon), true);
+    const astro = computeAstro(lat, lon, tz, new Date(`${d}T12:00:00Z`));
     return {
       dateEpoch: Math.floor(new Date(`${d}T12:00:00Z`).getTime() / 1000),
       weekdayIndex: weekdayIndexOf(d),
@@ -133,6 +146,18 @@ export async function fetchMetNoForecast(
       minTempF: Math.round(cToF(a.lo)),
       chanceOfRain: a.pop,
       conditionCode: a.code,
+      conditionText: conditionText(cond.key, language),
+      feelsLikeC: summary.feelsLikeC,
+      feelsLikeF: summary.feelsLikeF,
+      avgHumidity: summary.avgHumidity,
+      maxWindKph: Math.round((detailsOf(windiest).wind_speed ?? 0) * 3.6) || undefined,
+      windDir: degToCompass(detailsOf(windiest).wind_from_direction),
+      totalPrecipMm: Math.round(a.precip * 10) / 10,
+      sunrise: astro.sunrise,
+      sunset: astro.sunset,
+      moonPhase: astro.moonPhase,
+      moonIllumination: astro.moonIllumination,
+      hours: dayHours,
     };
   });
 

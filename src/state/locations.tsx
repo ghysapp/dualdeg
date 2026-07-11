@@ -28,7 +28,7 @@ import {
 } from 'react';
 import { AppState, Linking } from 'react-native';
 
-import { CACHE_TTL, MAX_SAVED_CITIES } from '@/config';
+import { BACKGROUND_REFRESH_THRESHOLD, CACHE_TTL, MAX_SAVED_CITIES } from '@/config';
 import { type LanguageCode } from '@/i18n/translations';
 import { loadJson, readCache, removeCache, saveJson, writeCache } from '@/services/cache';
 import { getZipcodeFromIP } from '@/services/geoip';
@@ -84,6 +84,8 @@ interface LocationsContextValue {
   refresh: (ref: LocationRef, force?: boolean) => void;
   addCity: (city: CitySearchResult) => Promise<boolean>;
   removeCity: (id: number) => void;
+  /** Persist a new order for the saved cities, keeping the selection stable. */
+  reorderCities: (next: SavedCity[]) => void;
   isSaved: (id: number) => boolean;
   canAddMore: boolean;
   /** Foreground location permission status. */
@@ -105,7 +107,9 @@ const LocationsContext = createContext<LocationsContextValue | null>(null);
 const IDLE: WeatherEntry = { status: 'idle', refreshing: false };
 
 // Bump when the cached WeatherData shape changes, to invalidate old entries.
-const CACHE_VERSION = 'v3';
+// v4: "Next N days" expanded from 2 to up to 7 days.
+// v5: per-day detail (hourly, astronomy, metrics) added for the day screen.
+const CACHE_VERSION = 'v5';
 
 // Pull-to-refresh is ignored if the location was fetched within this window.
 const MANUAL_REFRESH_COOLDOWN = 5 * 60 * 1000;
@@ -376,9 +380,29 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     }
   }, [permission, acquireGps]);
 
+  // Refresh the visible tab when the app returns from a long background. Held
+  // in a ref so the AppState listener never needs the (frequently-changing)
+  // active tab / refresh callback in its dependency array. Assigned below,
+  // once `refresh` and the active tab are known.
+  const refreshVisibleRef = useRef<() => void>(() => {});
+  const backgroundedAt = useRef<number | null>(null);
+
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') recheckPermission();
+      if (s === 'active') {
+        recheckPermission();
+        const since = backgroundedAt.current;
+        backgroundedAt.current = null;
+        if (since != null && Date.now() - since >= BACKGROUND_REFRESH_THRESHOLD) {
+          if (__DEV__) {
+            console.log(`[wx] foreground after ${Math.round((Date.now() - since) / 1000)}s — refreshing`);
+          }
+          refreshVisibleRef.current();
+        }
+      } else if (backgroundedAt.current == null) {
+        // First non-active transition (background / inactive): stamp the time.
+        backgroundedAt.current = Date.now();
+      }
     });
     return () => sub.remove();
   }, [recheckPermission]);
@@ -442,6 +466,15 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     [entries, language, ensureFresh, permission, acquireGps, acquireApproximate],
   );
 
+  // Keep the foreground-refresh target pointed at the currently-visible tab.
+  // (The background gap always exceeds MANUAL_REFRESH_COOLDOWN, so `refresh`
+  // never no-ops here; force=true also re-acquires GPS for the current tab.)
+  useEffect(() => {
+    refreshVisibleRef.current = () => {
+      if (activeTab) refresh(activeTab.ref, true);
+    };
+  }, [activeTab, refresh]);
+
   const addCity = useCallback(
     async (city: CitySearchResult): Promise<boolean> => {
       if (cities.some((c) => c.id === city.id)) return true;
@@ -474,6 +507,19 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     [cities, persistCities, language],
   );
 
+  const reorderCities = useCallback(
+    (next: SavedCity[]) => {
+      // Keep the same city selected on the main screen after the reorder.
+      const selectedCityId = selectedIndex > 0 ? cities[selectedIndex - 1]?.id : undefined;
+      persistCities(next);
+      if (selectedCityId != null) {
+        const ni = next.findIndex((c) => c.id === selectedCityId);
+        if (ni >= 0) setSelectedIndex(ni + 1);
+      }
+    },
+    [cities, selectedIndex, persistCities],
+  );
+
   const isSaved = useCallback((id: number) => cities.some((c) => c.id === id), [cities]);
 
   const value: LocationsContextValue = {
@@ -484,6 +530,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     refresh,
     addCity,
     removeCity,
+    reorderCities,
     isSaved,
     canAddMore: cities.length < MAX_SAVED_CITIES,
     permission,

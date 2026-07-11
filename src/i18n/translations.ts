@@ -355,35 +355,41 @@ export interface IapStrings {
   iapRestoreNone: string;
 }
 
-/** Attribution screen strings. */
+/** Attribution + city-management + language screen strings. */
 export interface ExtraStrings {
   attribution: string;
   attributionIntro: string;
+  /** "Cities" — settings row + manage-cities screen title. */
+  cities: string;
+  /** Helper line on the manage-cities screen. */
+  reorderHint: string;
+  /** Empty state on the manage-cities screen. */
+  noCities: string;
 }
 
 /** Combined strings exposed to the app (UI + permission + IAP + extra). */
 export type FullStrings = Strings & PermStrings & IapStrings & ExtraStrings;
 
 export const EXTRA_STRINGS: Record<LanguageCode, ExtraStrings> = {
-  en: { attribution: 'Attribution', attributionIntro: 'Weather data is provided by:' },
-  es: { attribution: 'Atribución', attributionIntro: 'Los datos meteorológicos son proporcionados por:' },
-  zh: { attribution: '归属声明', attributionIntro: '天气数据由以下服务提供：' },
-  ja: { attribution: '帰属表示', attributionIntro: '気象データの提供元：' },
-  de: { attribution: 'Danksagungen', attributionIntro: 'Wetterdaten bereitgestellt von:' },
-  fr: { attribution: 'Attributions', attributionIntro: 'Données météo fournies par :' },
-  pt: { attribution: 'Atribuição', attributionIntro: 'Dados meteorológicos fornecidos por:' },
-  ko: { attribution: '저작자 표시', attributionIntro: '날씨 데이터 제공:' },
-  ar: { attribution: 'الإسناد', attributionIntro: 'بيانات الطقس مقدمة من:' },
-  hi: { attribution: 'एट्रिब्यूशन', attributionIntro: 'मौसम डेटा प्रदाता:' },
-  it: { attribution: 'Attribuzioni', attributionIntro: 'Dati meteo forniti da:' },
-  nl: { attribution: 'Naamsvermelding', attributionIntro: 'Weergegevens geleverd door:' },
-  sv: { attribution: 'Attribuering', attributionIntro: 'Väderdata tillhandahålls av:' },
-  no: { attribution: 'Kreditering', attributionIntro: 'Værdata levert av:' },
-  da: { attribution: 'Kreditering', attributionIntro: 'Vejrdata leveret af:' },
-  el: { attribution: 'Απόδοση', attributionIntro: 'Τα δεδομένα καιρού παρέχονται από:' },
-  pl: { attribution: 'Atrybucja', attributionIntro: 'Dane pogodowe dostarczają:' },
-  ru: { attribution: 'Атрибуция', attributionIntro: 'Данные о погоде предоставлены:' },
-  uk: { attribution: 'Атрибуція', attributionIntro: 'Дані про погоду надано:' },
+  en: { attribution: 'Attribution', attributionIntro: 'Weather data is provided by:', cities: 'Cities', reorderHint: 'Drag to reorder your tabs.', noCities: 'No saved cities yet.' },
+  es: { attribution: 'Atribución', attributionIntro: 'Los datos meteorológicos son proporcionados por:', cities: 'Ciudades', reorderHint: 'Arrastra para reordenar tus pestañas.', noCities: 'Aún no hay ciudades guardadas.' },
+  zh: { attribution: '归属声明', attributionIntro: '天气数据由以下服务提供：', cities: '城市', reorderHint: '拖动以重新排列标签页。', noCities: '尚未保存城市。' },
+  ja: { attribution: '帰属表示', attributionIntro: '気象データの提供元：', cities: '都市', reorderHint: 'ドラッグしてタブを並べ替えます。', noCities: '保存された都市はまだありません。' },
+  de: { attribution: 'Danksagungen', attributionIntro: 'Wetterdaten bereitgestellt von:', cities: 'Städte', reorderHint: 'Ziehen, um deine Tabs neu anzuordnen.', noCities: 'Noch keine gespeicherten Städte.' },
+  fr: { attribution: 'Attributions', attributionIntro: 'Données météo fournies par :', cities: 'Villes', reorderHint: 'Glissez pour réordonner vos onglets.', noCities: 'Aucune ville enregistrée pour l’instant.' },
+  pt: { attribution: 'Atribuição', attributionIntro: 'Dados meteorológicos fornecidos por:', cities: 'Cidades', reorderHint: 'Arraste para reordenar as suas abas.', noCities: 'Nenhuma cidade salva ainda.' },
+  ko: { attribution: '저작자 표시', attributionIntro: '날씨 데이터 제공:', cities: '도시', reorderHint: '드래그하여 탭 순서를 변경하세요.', noCities: '저장된 도시가 아직 없습니다.' },
+  ar: { attribution: 'الإسناد', attributionIntro: 'بيانات الطقس مقدمة من:', cities: 'المدن', reorderHint: 'اسحب لإعادة ترتيب علاماتك.', noCities: 'لا توجد مدن محفوظة بعد.' },
+  hi: { attribution: 'एट्रिब्यूशन', attributionIntro: 'मौसम डेटा प्रदाता:', cities: 'शहर', reorderHint: 'टैब पुनः क्रमित करने के लिए खींचें।', noCities: 'अभी तक कोई सहेजा गया शहर नहीं।' },
+  it: { attribution: 'Attribuzioni', attributionIntro: 'Dati meteo forniti da:', cities: 'Città', reorderHint: 'Trascina per riordinare le schede.', noCities: 'Nessuna città salvata.' },
+  nl: { attribution: 'Naamsvermelding', attributionIntro: 'Weergegevens geleverd door:', cities: 'Steden', reorderHint: 'Sleep om je tabbladen te herordenen.', noCities: 'Nog geen opgeslagen steden.' },
+  sv: { attribution: 'Attribuering', attributionIntro: 'Väderdata tillhandahålls av:', cities: 'Städer', reorderHint: 'Dra för att ordna om dina flikar.', noCities: 'Inga sparade städer ännu.' },
+  no: { attribution: 'Kreditering', attributionIntro: 'Værdata levert av:', cities: 'Byer', reorderHint: 'Dra for å endre rekkefølgen på fanene.', noCities: 'Ingen lagrede byer ennå.' },
+  da: { attribution: 'Kreditering', attributionIntro: 'Vejrdata leveret af:', cities: 'Byer', reorderHint: 'Træk for at ændre rækkefølgen på fanerne.', noCities: 'Ingen gemte byer endnu.' },
+  el: { attribution: 'Απόδοση', attributionIntro: 'Τα δεδομένα καιρού παρέχονται από:', cities: 'Πόλεις', reorderHint: 'Σύρετε για αναδιάταξη των καρτελών.', noCities: 'Δεν υπάρχουν αποθηκευμένες πόλεις ακόμη.' },
+  pl: { attribution: 'Atrybucja', attributionIntro: 'Dane pogodowe dostarczają:', cities: 'Miasta', reorderHint: 'Przeciągnij, aby zmienić kolejność kart.', noCities: 'Brak zapisanych miast.' },
+  ru: { attribution: 'Атрибуция', attributionIntro: 'Данные о погоде предоставлены:', cities: 'Города', reorderHint: 'Перетащите, чтобы изменить порядок вкладок.', noCities: 'Пока нет сохранённых городов.' },
+  uk: { attribution: 'Атрибуція', attributionIntro: 'Дані про погоду надано:', cities: 'Міста', reorderHint: 'Перетягніть, щоб змінити порядок вкладок.', noCities: 'Поки немає збережених міст.' },
 };
 
 export const IAP_STRINGS: Record<LanguageCode, IapStrings> = {

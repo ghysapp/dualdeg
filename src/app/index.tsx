@@ -96,7 +96,16 @@ export default function HomeScreen() {
               <WeatherHero data={entry.data} sky={sky} />
               <MetricGrid data={entry.data} sky={sky} />
               <HourlyStrip hours={entry.data.hours} sky={sky} />
-              <DailyOutlook days={entry.data.days} sky={sky} />
+              <DailyOutlook
+                days={entry.data.days}
+                sky={sky}
+                onDayPress={(d) =>
+                  router.push({
+                    pathname: '/day',
+                    params: { tab: activeTab.key, epoch: String(d.dateEpoch) },
+                  })
+                }
+              />
               <SunMoonSection data={entry.data} sky={sky} />
               <TempScale sky={sky} />
               <View style={{ height: 24 }} />

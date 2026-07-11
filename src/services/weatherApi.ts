@@ -61,8 +61,11 @@ interface RawForecastDay {
     maxtemp_f: number;
     mintemp_c: number;
     mintemp_f: number;
+    avghumidity: number;
+    maxwind_kph: number;
     daily_chance_of_rain: number;
     totalprecip_mm: number;
+    uv: number;
     condition: RawCondition;
   };
   astro: {
@@ -84,6 +87,8 @@ interface RawHour {
   feelslike_c: number;
   feelslike_f: number;
   humidity: number;
+  wind_kph: number;
+  wind_dir: string;
   chance_of_rain: number;
 }
 
@@ -128,6 +133,30 @@ export interface DayForecast {
   minTempF: number;
   chanceOfRain: number;
   conditionCode: number;
+
+  // --- Rich detail for the day screen. Optional: each is populated only when
+  //     the serving provider offers it, so the detail UI degrades gracefully. ---
+  /** Localized condition text (e.g. "Partly cloudy"). */
+  conditionText?: string;
+  /** Representative (around midday) feels-like temperature. */
+  feelsLikeC?: number;
+  feelsLikeF?: number;
+  /** Mean relative humidity across the day, %. */
+  avgHumidity?: number;
+  /** Peak wind speed for the day, km/h, and its compass direction. */
+  maxWindKph?: number;
+  windDir?: string;
+  /** Total precipitation across the day, mm. */
+  totalPrecipMm?: number;
+  /** UV index (0–11+), where the provider reports it. */
+  uv?: number;
+  /** Astronomy for the day (same string shapes as {@link WeatherData.today}). */
+  sunrise?: string;
+  sunset?: string;
+  moonPhase?: string;
+  moonIllumination?: number;
+  /** Hour-by-hour breakdown for this day (may be coarser for far-out days). */
+  hours?: HourForecast[];
 }
 
 export interface WeatherData {
@@ -225,6 +254,28 @@ function weekdayIndexOf(date: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
+/**
+ * Day-level aggregates a provider can derive from a day's own hourly series:
+ * mean humidity and a representative (nearest 14:00) feels-like temperature.
+ * Shared so every provider fills the detail screen the same way.
+ */
+export function summarizeDayHours(hours: HourForecast[]): {
+  avgHumidity?: number;
+  feelsLikeC?: number;
+  feelsLikeF?: number;
+} {
+  if (hours.length === 0) return {};
+  const hums = hours.map((h) => h.humidity).filter((v) => Number.isFinite(v));
+  const avgHumidity = hums.length
+    ? Math.round(hums.reduce((a, b) => a + b, 0) / hums.length)
+    : undefined;
+  const midday = hours.reduce(
+    (best, h) => (Math.abs(h.hour24 - 14) < Math.abs(best.hour24 - 14) ? h : best),
+    hours[0],
+  );
+  return { avgHumidity, feelsLikeC: midday.feelsLikeC, feelsLikeF: midday.feelsLikeF };
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -246,16 +297,10 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
   const today = days[0];
   const nowEpoch = raw.location.localtime_epoch;
 
-  // Flatten every forecast hour, then keep the current hour onward (24 of them).
-  const allHours = days.flatMap((d) => d.hour);
-  const startIdx = Math.max(
-    0,
-    allHours.findIndex((h) => h.time_epoch + 3600 > nowEpoch),
-  );
-  const hours: HourForecast[] = allHours.slice(startIdx, startIdx + 24).map((h, i) => ({
+  const toHour = (h: RawHour, isNow: boolean): HourForecast => ({
     timeEpoch: h.time_epoch,
     hour24: Number(h.time.slice(11, 13)),
-    isNow: i === 0,
+    isNow,
     tempC: Math.round(h.temp_c),
     tempF: Math.round(h.temp_f),
     feelsLikeC: Math.round(h.feelslike_c),
@@ -264,20 +309,50 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
     conditionCode: h.condition.code,
     isDay: h.is_day === 1,
     chanceOfRain: h.chance_of_rain,
-  }));
+  });
 
-  // The "next days" rows: everything after today.
-  const dayForecasts: DayForecast[] = days.slice(1).map((d, i) => ({
-    dateEpoch: d.date_epoch,
-    weekdayIndex: weekdayIndexOf(d.date),
-    isTomorrow: i === 0,
-    maxTempC: Math.round(d.day.maxtemp_c),
-    maxTempF: Math.round(d.day.maxtemp_f),
-    minTempC: Math.round(d.day.mintemp_c),
-    minTempF: Math.round(d.day.mintemp_f),
-    chanceOfRain: d.day.daily_chance_of_rain,
-    conditionCode: d.day.condition.code,
-  }));
+  // Flatten every forecast hour, then keep the current hour onward (24 of them).
+  const allHours = days.flatMap((d) => d.hour);
+  const startIdx = Math.max(
+    0,
+    allHours.findIndex((h) => h.time_epoch + 3600 > nowEpoch),
+  );
+  const hours: HourForecast[] = allHours
+    .slice(startIdx, startIdx + 24)
+    .map((h, i) => toHour(h, i === 0));
+
+  // The "next days" rows: everything after today, each enriched for the day screen.
+  const dayForecasts: DayForecast[] = days.slice(1).map((d, i) => {
+    const dayHours = d.hour.map((h) => toHour(h, false));
+    const windiest = d.hour.reduce((a, b) => (b.wind_kph > a.wind_kph ? b : a), d.hour[0]);
+    const summary = summarizeDayHours(dayHours);
+    return {
+      // Noon UTC of the local date — a uniform, tz-agnostic anchor across
+      // providers so the day screen can render the calendar date correctly.
+      dateEpoch: Math.floor(new Date(`${d.date}T12:00:00Z`).getTime() / 1000),
+      weekdayIndex: weekdayIndexOf(d.date),
+      isTomorrow: i === 0,
+      maxTempC: Math.round(d.day.maxtemp_c),
+      maxTempF: Math.round(d.day.maxtemp_f),
+      minTempC: Math.round(d.day.mintemp_c),
+      minTempF: Math.round(d.day.mintemp_f),
+      chanceOfRain: d.day.daily_chance_of_rain,
+      conditionCode: d.day.condition.code,
+      conditionText: d.day.condition.text,
+      feelsLikeC: summary.feelsLikeC,
+      feelsLikeF: summary.feelsLikeF,
+      avgHumidity: Math.round(d.day.avghumidity ?? summary.avgHumidity ?? 0) || undefined,
+      maxWindKph: Math.round(d.day.maxwind_kph ?? windiest?.wind_kph ?? 0) || undefined,
+      windDir: windiest?.wind_dir,
+      totalPrecipMm: d.day.totalprecip_mm,
+      uv: d.day.uv,
+      sunrise: d.astro.sunrise,
+      sunset: d.astro.sunset,
+      moonPhase: d.astro.moon_phase,
+      moonIllumination: Number(d.astro.moon_illumination) || 0,
+      hours: dayHours,
+    };
+  });
 
   return {
     location: {

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { TempRange } from '@/components/weather/Temp';
 import { format } from '@/i18n/translations';
@@ -9,7 +9,15 @@ import { weatherEmoji } from '@/theme/icons';
 import type { SkyTheme } from '@/theme/sky';
 import { orderTemp } from '@/utils/temperature';
 
-export function DailyOutlook({ days, sky }: { days: DayForecast[]; sky: SkyTheme }) {
+export function DailyOutlook({
+  days,
+  sky,
+  onDayPress,
+}: {
+  days: DayForecast[];
+  sky: SkyTheme;
+  onDayPress?: (day: DayForecast) => void;
+}) {
   const { strings, tempOrder } = useSettings();
   if (days.length === 0) return null;
   return (
@@ -21,15 +29,20 @@ export function DailyOutlook({ days, sky }: { days: DayForecast[]; sky: SkyTheme
         const hi = orderTemp(d.maxTempC, d.maxTempF, tempOrder);
         const lo = orderTemp(d.minTempC, d.minTempF, tempOrder);
         return (
-          <View
+          <Pressable
             key={d.dateEpoch}
-            style={[styles.row, { backgroundColor: sky.cardBg, borderColor: sky.cardBorder }]}
+            onPress={onDayPress ? () => onDayPress(d) : undefined}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: sky.cardBg, borderColor: sky.cardBorder },
+              pressed && onDayPress ? styles.rowPressed : null,
+            ]}
           >
             <Text style={[styles.name, { color: sky.textPrimary }]} numberOfLines={1}>
               {d.isTomorrow ? strings.tomorrow : strings.weekdays[d.weekdayIndex]}
             </Text>
             <Text style={styles.icon}>{weatherEmoji(d.conditionCode, true)}</Text>
-            <Text style={[styles.precip, { color: sky.textPrimary }]}>💧{d.chanceOfRain}%</Text>
+            <Text style={[styles.precip, { color: sky.textPrimary }]}>☔ {d.chanceOfRain}%</Text>
             <View style={styles.temps}>
               <TempRange
                 hi={hi.primaryValue}
@@ -49,7 +62,8 @@ export function DailyOutlook({ days, sky }: { days: DayForecast[]; sky: SkyTheme
                 opacity={0.7}
               />
             </View>
-          </View>
+            {onDayPress && <Text style={[styles.chevron, { color: sky.textSecondary }]}>›</Text>}
+          </Pressable>
         );
       })}
     </View>
@@ -78,10 +92,19 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     marginBottom: 8,
   },
+  rowPressed: {
+    opacity: 0.6,
+  },
+  chevron: {
+    fontFamily: Font.medium,
+    fontSize: 20,
+    opacity: 0.6,
+    marginLeft: -4,
+  },
   name: {
     fontFamily: Font.semibold,
     fontSize: 13,
-    width: 74,
+    width: 82,
   },
   icon: {
     fontSize: 24,

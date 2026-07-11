@@ -72,6 +72,7 @@ export function HourlyStrip({ hours, sky }: { hours: HourForecast[]; sky: SkyThe
                 opacity={0.85}
               />
               <Text style={[styles.meta, { color: sky.textPrimary }]}>💧 {h.humidity}%</Text>
+              <Text style={[styles.metaRain, { color: sky.textPrimary }]}>☔ {h.chanceOfRain}%</Text>
             </View>
           );
         })}
@@ -132,5 +133,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     opacity: 0.82,
     marginTop: 5,
+  },
+  metaRain: {
+    fontFamily: Font.medium,
+    fontSize: 10,
+    opacity: 0.82,
+    marginTop: 3,
   },
 });

@@ -28,12 +28,39 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen
+              name="day"
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
               name="add-city"
               options={{ presentation: 'modal', headerShown: false }}
             />
             <Stack.Screen
               name="settings"
               options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="manage-cities"
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="language"
+              options={{
+                presentation: 'card',
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                headerShown: false,
+              }}
             />
             <Stack.Screen
               name="attribution"

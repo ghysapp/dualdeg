@@ -6,11 +6,12 @@
  * (suncalc) for moon phase; condition text is localized in-app from the MF icon.
  */
 
-import { METEOFRANCE_API_BASE, METEOFRANCE_TOKEN } from '@/config';
+import { MAX_FUTURE_DAYS, METEOFRANCE_API_BASE, METEOFRANCE_TOKEN } from '@/config';
 import { conditionFromMeteoFrance, conditionText } from '@/i18n/conditions';
 import type { LanguageCode } from '@/i18n/translations';
 import { computeAstro } from '@/services/astronomy';
 import {
+  summarizeDayHours,
   WeatherApiError,
   type DayForecast,
   type HourForecast,
@@ -80,11 +81,7 @@ export async function fetchMeteoFranceForecast(
   const todayDate = localtime.slice(0, 10);
   const now = Date.now();
 
-  // --- Hourly (current hour onward, 24) ---
-  const future = hourly.filter((e) => (e.dt + 3600) * 1000 > now);
-  const slice = (future.length ? future : hourly).slice(0, 24);
-
-  const hours: HourForecast[] = slice.map((e, i) => {
+  const toHour = (e: any, isNow: boolean): HourForecast => {
     const ms = e.dt * 1000;
     const isDay = iconIsDay(e.weather?.icon, ms, tz);
     const tC = e.T?.value ?? 0;
@@ -92,7 +89,7 @@ export async function fetchMeteoFranceForecast(
     return {
       timeEpoch: e.dt,
       hour24: hourInTz(ms, tz),
-      isNow: i === 0,
+      isNow,
       tempC: Math.round(tC),
       tempF: Math.round(cToF(tC)),
       feelsLikeC: Math.round(flC),
@@ -102,15 +99,43 @@ export async function fetchMeteoFranceForecast(
       isDay,
       chanceOfRain: probAt(e.dt),
     };
-  });
+  };
 
-  // --- Daily (next 2 days) ---
-  const days: DayForecast[] = daily.slice(1, 3).map((d, i) => {
+  // --- Hourly (current hour onward, 24) ---
+  const future = hourly.filter((e) => (e.dt + 3600) * 1000 > now);
+  const slice = (future.length ? future : hourly).slice(0, 24);
+
+  const hours: HourForecast[] = slice.map((e, i) => toHour(e, i === 0));
+
+  // Hourly entries grouped by local date, for each future day's breakdown.
+  const hoursByDate = new Map<string, any[]>();
+  for (const e of hourly) {
+    const day = dateInTz(e.dt * 1000, tz);
+    (hoursByDate.get(day) ?? hoursByDate.set(day, []).get(day)!).push(e);
+  }
+
+  // --- Daily (next N days) ---
+  const days: DayForecast[] = daily.slice(1, 1 + MAX_FUTURE_DAYS).map((d, i) => {
     const day = dateInTz(d.dt * 1000, tz);
     const hi = d.T?.max ?? d.T?.min ?? 0;
     const lo = d.T?.min ?? d.T?.max ?? 0;
+    const cond = conditionFromMeteoFrance(d.weather12H?.icon, d.weather12H?.desc, true);
+    const dayHours = (hoursByDate.get(day) ?? []).map((e) => toHour(e, false));
+    const summary = summarizeDayHours(dayHours);
+    const windiest = dayHours.length
+      ? (hoursByDate.get(day) ?? []).reduce(
+          (x, y) => ((y.wind?.speed ?? 0) > (x.wind?.speed ?? 0) ? y : x),
+          (hoursByDate.get(day) ?? [])[0],
+        )
+      : undefined;
+    const humAvg =
+      d.humidity?.min != null && d.humidity?.max != null
+        ? Math.round((d.humidity.min + d.humidity.max) / 2)
+        : summary.avgHumidity;
+    const astro = computeAstro(lat, lon, tz, new Date(`${day}T12:00:00Z`));
     return {
-      dateEpoch: d.dt,
+      // Noon UTC of the local date — uniform anchor across providers.
+      dateEpoch: Math.floor(new Date(`${day}T12:00:00Z`).getTime() / 1000),
       weekdayIndex: weekdayIndexOf(day),
       isTomorrow: i === 0,
       maxTempC: Math.round(hi),
@@ -118,7 +143,20 @@ export async function fetchMeteoFranceForecast(
       minTempC: Math.round(lo),
       minTempF: Math.round(cToF(lo)),
       chanceOfRain: probForDay(day),
-      conditionCode: conditionFromMeteoFrance(d.weather12H?.icon, d.weather12H?.desc, true).code,
+      conditionCode: cond.code,
+      conditionText: conditionText(cond.key, language),
+      feelsLikeC: summary.feelsLikeC,
+      feelsLikeF: summary.feelsLikeF,
+      avgHumidity: humAvg,
+      maxWindKph: windiest ? Math.round(windiest.wind?.speed ?? 0) || undefined : undefined,
+      windDir: windiest ? degToCompass(windiest.wind?.direction) : undefined,
+      totalPrecipMm: d.precipitation?.['24h'],
+      uv: d.uv,
+      sunrise: astro.sunrise,
+      sunset: astro.sunset,
+      moonPhase: astro.moonPhase,
+      moonIllumination: astro.moonIllumination,
+      hours: dayHours,
     };
   });
 

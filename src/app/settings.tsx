@@ -5,22 +5,11 @@ import { Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RemoveAdsCard } from '@/components/settings/RemoveAdsCard';
-import { LANGUAGES, type LanguageCode } from '@/i18n/translations';
+import { LANGUAGES } from '@/i18n/translations';
+import { useLocations } from '@/state/locations';
 import { useSettings, type TempOrder } from '@/state/settings';
 import { Font } from '@/theme/fonts';
-
-const PALETTES = {
-  light: {
-    bg: '#f4f6fa', surface: '#ffffff', border: '#e3e7ee', text: '#1c2433',
-    subtext: '#6b7280', accent: '#2f7ad6', selectedBg: '#e9f1fc',
-  },
-  dark: {
-    bg: '#0e1422', surface: '#172033', border: '#26324a', text: '#eef2f9',
-    subtext: '#94a1b8', accent: '#5fa3ec', selectedBg: '#1b2a44',
-  },
-} as const;
-
-type Palette = (typeof PALETTES)[keyof typeof PALETTES];
+import { useSettingsPalette, type SettingsPalette } from '@/theme/settingsTheme';
 
 const TEMP_OPTIONS: { value: TempOrder; label: string }[] = [
   { value: 'CF', label: '°C / °F' },
@@ -30,8 +19,12 @@ const TEMP_OPTIONS: { value: TempOrder; label: string }[] = [
 export default function SettingsScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
-  const c = PALETTES[scheme === 'dark' ? 'dark' : 'light'];
-  const { tempOrder, language, setTempOrder, setLanguage, strings } = useSettings();
+  const c = useSettingsPalette();
+  const { tempOrder, language, setTempOrder, strings } = useSettings();
+  const { tabs } = useLocations();
+
+  const cityCount = tabs.filter((t) => t.ref.kind === 'city').length;
+  const languageName = LANGUAGES.find((l) => l.code === language)?.name ?? language;
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
@@ -61,12 +54,7 @@ export default function SettingsScreen() {
                   onPress={() => setTempOrder(opt.value)}
                   style={[styles.segmentItem, active && { backgroundColor: c.accent }]}
                 >
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      { color: active ? '#ffffff' : c.text },
-                    ]}
-                  >
+                  <Text style={[styles.segmentText, { color: active ? '#ffffff' : c.text }]}>
                     {opt.label}
                   </Text>
                 </Pressable>
@@ -74,30 +62,37 @@ export default function SettingsScreen() {
             })}
           </View>
 
-          {/* Language */}
-          <Text style={[styles.sectionLabel, { color: c.subtext, marginTop: 28 }]}>
-            {strings.language.toUpperCase()}
-          </Text>
-          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border }]}>
-            {LANGUAGES.map((lang, i) => (
-              <LanguageRow
-                key={lang.code}
-                code={lang.code}
-                name={lang.name}
-                selected={language === lang.code}
-                colors={c}
-                last={i === LANGUAGES.length - 1}
-                onPress={() => setLanguage(lang.code)}
-              />
-            ))}
+          {/* Cities + Language navigation */}
+          <View
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, marginTop: 28 }]}
+          >
+            <NavRow
+              icon="th-large"
+              label={strings.cities}
+              value={String(cityCount)}
+              colors={c}
+              onPress={() => router.push('/manage-cities')}
+            />
+            <View style={[styles.divider, { backgroundColor: c.border }]} />
+            <NavRow
+              icon="language"
+              label={strings.language}
+              value={languageName}
+              colors={c}
+              onPress={() => router.push('/language')}
+            />
           </View>
 
           {/* Attribution */}
-          <View style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, marginTop: 28 }]}>
-            <Pressable style={styles.linkRow} onPress={() => router.push('/attribution')}>
-              <Text style={[styles.langName, { color: c.text }]}>{strings.attribution}</Text>
-              <FontAwesome name="chevron-right" size={13} color={c.subtext} />
-            </Pressable>
+          <View
+            style={[styles.card, { backgroundColor: c.surface, borderColor: c.border, marginTop: 28 }]}
+          >
+            <NavRow
+              icon="info-circle"
+              label={strings.attribution}
+              colors={c}
+              onPress={() => router.push('/attribution')}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -105,31 +100,32 @@ export default function SettingsScreen() {
   );
 }
 
-function LanguageRow({
-  name,
-  selected,
+function NavRow({
+  icon,
+  label,
+  value,
   colors,
-  last,
   onPress,
 }: {
-  code: LanguageCode;
-  name: string;
-  selected: boolean;
-  colors: Palette;
-  last: boolean;
+  icon: React.ComponentProps<typeof FontAwesome>['name'];
+  label: string;
+  value?: string;
+  colors: SettingsPalette;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={[
-        styles.langRow,
-        !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-        selected && { backgroundColor: colors.selectedBg },
-      ]}
+      style={({ pressed }) => [styles.navRow, pressed && { backgroundColor: colors.selectedBg }]}
     >
-      <Text style={[styles.langName, { color: colors.text }]}>{name}</Text>
-      {selected && <FontAwesome name="check" size={15} color={colors.accent} />}
+      <FontAwesome name={icon} size={16} color={colors.accent} style={styles.navIcon} />
+      <Text style={[styles.navLabel, { color: colors.text }]}>{label}</Text>
+      {value != null && (
+        <Text style={[styles.navValue, { color: colors.subtext }]} numberOfLines={1}>
+          {value}
+        </Text>
+      )}
+      <FontAwesome name="chevron-right" size={13} color={colors.subtext} />
     </Pressable>
   );
 }
@@ -174,19 +170,29 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
   },
-  langRow: {
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 48,
+  },
+  navRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 15,
+    gap: 12,
   },
-  langName: { fontFamily: Font.medium, fontSize: 16 },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  navIcon: {
+    width: 20,
+    textAlign: 'center',
+  },
+  navLabel: {
+    flex: 1,
+    fontFamily: Font.medium,
+    fontSize: 16,
+  },
+  navValue: {
+    fontFamily: Font.regular,
+    fontSize: 15,
+    maxWidth: 160,
   },
 });

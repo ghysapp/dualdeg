@@ -9,11 +9,12 @@
  * pass to the API so timestamps come back local.
  */
 
-import { BRIGHTSKY_API_BASE } from '@/config';
+import { BRIGHTSKY_API_BASE, MAX_FUTURE_DAYS } from '@/config';
 import { conditionFromBrightSky, conditionText } from '@/i18n/conditions';
 import type { LanguageCode } from '@/i18n/translations';
 import { computeAstro } from '@/services/astronomy';
 import {
+  summarizeDayHours,
   WeatherApiError,
   type DayForecast,
   type HourForecast,
@@ -60,7 +61,7 @@ export async function fetchDwdForecast(
   const todayDate = localtime.slice(0, 10);
   const url =
     `${BRIGHTSKY_API_BASE}/weather?lat=${lat}&lon=${lon}` +
-    `&date=${todayDate}&last_date=${addDays(todayDate, 3)}&tz=${encodeURIComponent(TZ)}`;
+    `&date=${todayDate}&last_date=${addDays(todayDate, MAX_FUTURE_DAYS + 1)}&tz=${encodeURIComponent(TZ)}`;
   const data = await brightsky(url);
 
   const all: any[] = Array.isArray(data.weather) ? data.weather : [];
@@ -70,11 +71,7 @@ export async function fetchDwdForecast(
   const chanceOf = (h: any): number =>
     h.precipitation_probability ?? h.precipitation_probability_6h ?? 0;
 
-  // --- Hourly (current hour onward, 24). Timestamps are local (tz param). ---
-  const future = all.filter((h) => Date.parse(h.timestamp) + 3600_000 > now);
-  const slice = (future.length ? future : all).slice(0, 24);
-
-  const hours: HourForecast[] = slice.map((h, i) => {
+  const toHour = (h: any, isNow: boolean): HourForecast => {
     const hour24 = Number(String(h.timestamp).slice(11, 13));
     const isDay = iconIsDay(h.icon, hour24);
     const tC = h.temperature ?? 0;
@@ -84,7 +81,7 @@ export async function fetchDwdForecast(
     return {
       timeEpoch: Math.floor(Date.parse(h.timestamp) / 1000),
       hour24,
-      isNow: i === 0,
+      isNow,
       tempC: Math.round(tC),
       tempF: Math.round(cToF(tC)),
       feelsLikeC: Math.round(flC),
@@ -94,7 +91,13 @@ export async function fetchDwdForecast(
       isDay,
       chanceOfRain: chanceOf(h),
     };
-  });
+  };
+
+  // --- Hourly (current hour onward, 24). Timestamps are local (tz param). ---
+  const future = all.filter((h) => Date.parse(h.timestamp) + 3600_000 > now);
+  const slice = (future.length ? future : all).slice(0, 24);
+
+  const hours: HourForecast[] = slice.map((h, i) => toHour(h, i === 0));
 
   // --- Group by local date for daily + today aggregates ---
   const byDate = new Map<string, any[]>();
@@ -115,8 +118,15 @@ export async function fetchDwdForecast(
   };
 
   const futureDays = [...byDate.keys()].filter((d) => d > todayDate).sort();
-  const days: DayForecast[] = futureDays.slice(0, 2).map((d, i) => {
-    const a = aggregate(byDate.get(d)!);
+  const days: DayForecast[] = futureDays.slice(0, MAX_FUTURE_DAYS).map((d, i) => {
+    const list = byDate.get(d)!;
+    const a = aggregate(list);
+    const dayHours = list.map((h) => toHour(h, false));
+    const summary = summarizeDayHours(dayHours);
+    const windiest = list.reduce((x, y) => ((y.wind_speed ?? 0) > (x.wind_speed ?? 0) ? y : x), list[0]);
+    const noon = list.find((h) => String(h.timestamp).slice(11, 13) === '12') ?? list[Math.floor(list.length / 2)] ?? list[0];
+    const cond = conditionFromBrightSky(noon?.icon, noon?.condition);
+    const astro = computeAstro(lat, lon, TZ, new Date(`${d}T12:00:00Z`));
     return {
       dateEpoch: Math.floor(new Date(`${d}T12:00:00Z`).getTime() / 1000),
       weekdayIndex: weekdayIndexOf(d),
@@ -127,6 +137,18 @@ export async function fetchDwdForecast(
       minTempF: Math.round(cToF(a.lo)),
       chanceOfRain: a.pop,
       conditionCode: a.code,
+      conditionText: conditionText(cond.key, language),
+      feelsLikeC: summary.feelsLikeC,
+      feelsLikeF: summary.feelsLikeF,
+      avgHumidity: summary.avgHumidity,
+      maxWindKph: Math.round(windiest?.wind_speed ?? 0) || undefined,
+      windDir: degToCompass(windiest?.wind_direction),
+      totalPrecipMm: Math.round(a.precip * 10) / 10,
+      sunrise: astro.sunrise,
+      sunset: astro.sunset,
+      moonPhase: astro.moonPhase,
+      moonIllumination: astro.moonIllumination,
+      hours: dayHours,
     };
   });
 

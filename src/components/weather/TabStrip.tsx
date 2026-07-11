@@ -13,7 +13,7 @@ export function TabStrip({
   sky: SkyTheme;
   onAddPress: () => void;
 }) {
-  const { tabs, selectedIndex, selectTab, canAddMore } = useLocations();
+  const { tabs, selectedIndex, selectTab, canAddMore, entryFor } = useLocations();
   const { strings } = useSettings();
 
   return (
@@ -25,6 +25,12 @@ export function TabStrip({
     >
       {tabs.map((tab, i) => {
         const active = i === selectedIndex;
+        // The current-location tab shows the detected place name once it loads,
+        // falling back to the generic "Current" label while it resolves (or if
+        // the serving provider doesn't return a name).
+        const label = tab.isCurrent
+          ? entryFor(tab.ref).data?.location.name || strings.current
+          : tab.label;
         return (
           <Pressable
             key={tab.key}
@@ -56,7 +62,7 @@ export function TabStrip({
               numberOfLines={1}
               style={[styles.label, { color: active ? sky.tabActiveFg : sky.tabInactiveFg }]}
             >
-              {tab.isCurrent ? strings.current : tab.label}
+              {label}
             </Text>
           </Pressable>
         );

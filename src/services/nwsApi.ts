@@ -10,13 +10,14 @@
  * we localize it ourselves via the icon → condition mapping.
  */
 
-import { NWS_API_BASE, NWS_USER_AGENT } from '@/config';
+import { MAX_FUTURE_DAYS, NWS_API_BASE, NWS_USER_AGENT } from '@/config';
 import { computeAstro } from '@/services/astronomy';
 import { conditionFromIcon, conditionText } from '@/i18n/conditions';
 import { dateInTz, localNow } from '@/utils/tz';
 import { cToF, feelsLikeC } from '@/utils/units';
 import type { LanguageCode } from '@/i18n/translations';
 import {
+  summarizeDayHours,
   WeatherApiError,
   type DayForecast,
   type HourForecast,
@@ -88,6 +89,19 @@ function precipFromGrid(
   return { today: Math.round(today * 10) / 10, current: Math.round(current * 10) / 10 };
 }
 
+/** Total precip (mm) for a single local date from the gridpoints series. */
+function precipForDate(grid: any, tz: string, date: string): number | undefined {
+  const values = grid?.properties?.quantitativePrecipitation?.values;
+  if (!Array.isArray(values)) return undefined;
+  let total = 0;
+  for (const v of values) {
+    if (v?.value == null || !v.validTime) continue;
+    const startMs = new Date(String(v.validTime).split('/')[0]).getTime();
+    if (Number.isFinite(startMs) && dateInTz(startMs, tz) === date) total += v.value;
+  }
+  return Math.round(total * 10) / 10;
+}
+
 /** Wall-clock "YYYY-MM-DD HH:MM" in the location's timezone. */
 // ---------------------------------------------------------------------------
 // Public API
@@ -122,11 +136,7 @@ export async function fetchNwsForecast(
   const now = Date.now();
   const precip = precipFromGrid(grid, tz, todayDate, now);
 
-  // --- Hourly (current hour onward, 24) ---
-  const future = hPeriods.filter((p) => new Date(p.endTime ?? p.startTime).getTime() > now);
-  const slice = (future.length ? future : hPeriods).slice(0, 24);
-
-  const hours: HourForecast[] = slice.map((p, i) => {
+  const toHour = (p: any, isNow: boolean): HourForecast => {
     const isDay = !!p.isDaytime;
     const humidity = p.relativeHumidity?.value ?? 0;
     const windKph = parseWindKph(p.windSpeed);
@@ -134,7 +144,7 @@ export async function fetchNwsForecast(
     return {
       timeEpoch: Math.floor(new Date(p.startTime).getTime() / 1000),
       hour24: Number(String(p.startTime).slice(11, 13)),
-      isNow: i === 0,
+      isNow,
       tempC: Math.round(p.temperature),
       tempF: Math.round(cToF(p.temperature)),
       feelsLikeC: Math.round(flC),
@@ -144,30 +154,59 @@ export async function fetchNwsForecast(
       isDay,
       chanceOfRain: p.probabilityOfPrecipitation?.value ?? 0,
     };
-  });
+  };
+
+  // --- Hourly (current hour onward, 24) ---
+  const future = hPeriods.filter((p) => new Date(p.endTime ?? p.startTime).getTime() > now);
+  const slice = (future.length ? future : hPeriods).slice(0, 24);
+
+  const hours: HourForecast[] = slice.map((p, i) => toHour(p, i === 0));
+
+  // Hourly periods grouped by local date, for each future day's breakdown.
+  const hoursByDate = new Map<string, any[]>();
+  for (const p of hPeriods) {
+    const date = String(p.startTime).slice(0, 10);
+    (hoursByDate.get(date) ?? hoursByDate.set(date, []).get(date)!).push(p);
+  }
 
   // --- Daily (group 12-hour periods by date: day = high, night = low) ---
-  const byDate = new Map<string, { high?: number; low?: number; code: number | null; pop: number }>();
+  type CondKey = ReturnType<typeof conditionFromIcon>['key'];
+  type DailyAgg = { high?: number; low?: number; code: number | null; key: CondKey | null; pop: number };
+  const byDate = new Map<string, DailyAgg>();
   for (const p of dPeriods) {
     const date = String(p.startTime).slice(0, 10);
-    const e = byDate.get(date) ?? { code: null, pop: 0 };
+    const e = byDate.get(date) ?? { code: null, key: null, pop: 0 };
     const pop = p.probabilityOfPrecipitation?.value ?? 0;
     e.pop = Math.max(e.pop, pop);
     if (p.isDaytime) {
       e.high = p.temperature;
-      e.code = conditionFromIcon(p.icon, true).code;
+      const cond = conditionFromIcon(p.icon, true);
+      e.code = cond.code;
+      e.key = cond.key;
     } else {
       e.low = p.temperature;
-      if (e.code == null) e.code = conditionFromIcon(p.icon, true).code;
+      if (e.code == null) {
+        const cond = conditionFromIcon(p.icon, true);
+        e.code = cond.code;
+        e.key = cond.key;
+      }
     }
     byDate.set(date, e);
   }
 
-  const futureDates = [...byDate.keys()].filter((d) => d > todayDate).sort().slice(0, 2);
+  const futureDates = [...byDate.keys()].filter((d) => d > todayDate).sort().slice(0, MAX_FUTURE_DAYS);
   const days: DayForecast[] = futureDates.map((d, i) => {
     const e = byDate.get(d)!;
     const hi = e.high ?? e.low ?? 0;
     const lo = e.low ?? e.high ?? 0;
+    const dayPeriods = hoursByDate.get(d) ?? [];
+    const dayHours = dayPeriods.map((p) => toHour(p, false));
+    const summary = summarizeDayHours(dayHours);
+    const windiest = dayPeriods.reduce(
+      (x, y) => (parseWindKph(y.windSpeed) > parseWindKph(x.windSpeed) ? y : x),
+      dayPeriods[0],
+    );
+    const astro = computeAstro(rlat, rlon, tz, new Date(`${d}T12:00:00Z`));
     return {
       dateEpoch: Math.floor(new Date(`${d}T12:00:00Z`).getTime() / 1000),
       weekdayIndex: weekdayIndexOf(d),
@@ -178,6 +217,18 @@ export async function fetchNwsForecast(
       minTempF: Math.round(cToF(lo)),
       chanceOfRain: e.pop,
       conditionCode: e.code ?? 1003,
+      conditionText: e.key ? conditionText(e.key, language) : undefined,
+      feelsLikeC: summary.feelsLikeC,
+      feelsLikeF: summary.feelsLikeF,
+      avgHumidity: summary.avgHumidity,
+      maxWindKph: windiest ? parseWindKph(windiest.windSpeed) : undefined,
+      windDir: windiest?.windDirection || undefined,
+      totalPrecipMm: precipForDate(grid, tz, d),
+      sunrise: astro.sunrise,
+      sunset: astro.sunset,
+      moonPhase: astro.moonPhase,
+      moonIllumination: astro.moonIllumination,
+      hours: dayHours,
     };
   });
 
