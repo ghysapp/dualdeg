@@ -47,8 +47,7 @@ export default function RootLayout() {
             <Stack.Screen
               name="manage-cities"
               options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
+                presentation: 'modal',
                 gestureEnabled: true,
                 headerShown: false,
               }}
@@ -56,8 +55,7 @@ export default function RootLayout() {
             <Stack.Screen
               name="language"
               options={{
-                presentation: 'card',
-                animation: 'slide_from_right',
+                presentation: 'modal',
                 gestureEnabled: true,
                 headerShown: false,
               }}
