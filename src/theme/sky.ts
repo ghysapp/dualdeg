@@ -12,8 +12,10 @@
  *   night        → Frame B (dark, starry)  — after dusk / before dawn (any weather)
  */
 
+import { isDaylightAt } from '@/services/astronomy';
 import type { WeatherData } from '@/services/weatherApi';
 import { timeToMinutes } from '@/utils/time';
+import { localNow } from '@/utils/tz';
 
 export type SkyKey = 'day' | 'overcast' | 'golden' | 'overcastDusk' | 'night';
 
@@ -158,17 +160,23 @@ function isGloomy(code: number): boolean {
 
 const GOLDEN_WINDOW_MIN = 75;
 
-/** Resolve the sky palette for a forecast. */
-export function resolveSky(data: WeatherData): SkyTheme {
+/**
+ * Resolve the sky palette for a forecast.
+ *
+ * Day/night is computed from the sun's *current* position (not the provider's
+ * fetch-time day flag), so the background transitions live at the real
+ * sunrise/sunset even while showing already-cached data. `now` is injectable
+ * for testing; callers re-render on a timer to keep it fresh.
+ */
+export function resolveSky(data: WeatherData, now: Date = new Date()): SkyTheme {
   const { current, today, location } = data;
 
-  // Night is driven by the API's is_day flag (it accounts for twilight) and
-  // keeps its palette regardless of weather.
-  if (!current.isDay) return SKY.night;
+  // Night keeps its palette regardless of weather.
+  if (!isDaylightAt(location.lat, location.lon, now)) return SKY.night;
 
   const gloomy = isGloomy(current.conditionCode);
 
-  const nowMin = timeToMinutes(location.localtime.slice(11)); // "HH:MM"
+  const nowMin = timeToMinutes(localNow(location.tzId).slice(11)); // live "HH:MM"
   const sunriseMin = timeToMinutes(today.sunrise);
   const sunsetMin = timeToMinutes(today.sunset);
   const nearSunrise = Math.abs(nowMin - sunriseMin) <= GOLDEN_WINDOW_MIN;

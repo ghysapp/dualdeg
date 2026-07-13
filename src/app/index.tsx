@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -33,6 +34,14 @@ export default function HomeScreen() {
   const router = useRouter();
   const { tabs, selectedIndex, entryFor, refresh } = useLocations();
   const { strings } = useSettings();
+
+  // Re-render each minute so the sky palette transitions live at sunrise/sunset
+  // without waiting for a refetch (resolveSky reads the current time).
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((c) => c + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const activeTab = tabs[selectedIndex] ?? tabs[0];
   const entry = entryFor(activeTab.ref);

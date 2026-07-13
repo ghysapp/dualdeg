@@ -5,7 +5,7 @@
  * providers feed the UI identically.
  */
 
-import { getMoonIllumination, getTimes } from 'suncalc';
+import { getMoonIllumination, getPosition, getTimes } from 'suncalc';
 
 export interface Astro {
   sunrise: string;
@@ -40,6 +40,17 @@ function moonPhaseName(phase: number): string {
   if (phase < 0.72) return 'Waning Gibbous';
   if (phase < 0.78) return 'Last Quarter';
   return 'Waning Crescent';
+}
+
+/**
+ * True solar day/night at an instant — whether the sun is above the horizon.
+ * Uses the instantaneous solar altitude (no calendar-day boundary to get wrong,
+ * unlike a sunrise/sunset comparison across the UTC date line). Used where a
+ * provider's own day flag is unreliable: NWS marks 6pm–6am as "night"
+ * regardless of the real sunset, which would darken the UI hours too early.
+ */
+export function isDaylightAt(lat: number, lon: number, date: Date): boolean {
+  return getPosition(date, lat, lon).altitude > 0;
 }
 
 export function computeAstro(lat: number, lon: number, tz: string, date: Date = new Date()): Astro {

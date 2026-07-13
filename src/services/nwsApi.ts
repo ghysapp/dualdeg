@@ -11,7 +11,7 @@
  */
 
 import { MAX_FUTURE_DAYS, NWS_API_BASE, NWS_USER_AGENT } from '@/config';
-import { computeAstro } from '@/services/astronomy';
+import { computeAstro, isDaylightAt } from '@/services/astronomy';
 import { conditionFromIcon, conditionText } from '@/i18n/conditions';
 import { dateInTz, localNow } from '@/utils/tz';
 import { cToF, feelsLikeC } from '@/utils/units';
@@ -145,7 +145,9 @@ export async function fetchNwsForecast(
   const precip = precipFromGrid(grid, tz, todayDate, now);
 
   const toHour = (p: any, isNow: boolean): HourForecast => {
-    const isDay = !!p.isDaytime;
+    // NWS's `isDaytime` is a coarse 6am–6pm split, not the real sunrise/sunset,
+    // so derive day/night from the actual sun position instead.
+    const isDay = isDaylightAt(rlat, rlon, new Date(p.startTime));
     const humidity = p.relativeHumidity?.value ?? 0;
     const windKph = parseWindKph(p.windSpeed);
     const flC = feelsLikeC(p.temperature, humidity, windKph);
@@ -252,7 +254,7 @@ export async function fetchNwsForecast(
 
   // --- Current (from the first/now hourly period) ---
   const h0 = slice[0] ?? {};
-  const curIsDay = !!h0.isDaytime;
+  const curIsDay = isDaylightAt(rlat, rlon, h0.startTime ? new Date(h0.startTime) : new Date());
   const curHumidity = h0.relativeHumidity?.value ?? 0;
   const curWindKph = parseWindKph(h0.windSpeed);
   const curFlC = feelsLikeC(h0.temperature ?? 0, curHumidity, curWindKph);

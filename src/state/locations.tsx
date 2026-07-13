@@ -112,7 +112,8 @@ const IDLE: WeatherEntry = { status: 'idle', refreshing: false };
 // v4: "Next N days" expanded from 2 to up to 7 days.
 // v5: per-day detail (hourly, astronomy, metrics) added for the day screen.
 // v6: NWS far-day precip reports "no data" instead of a fake 0 mm.
-const CACHE_VERSION = 'v6';
+// v7: NWS day/night from real sun position, not its coarse 6am–6pm flag.
+const CACHE_VERSION = 'v7';
 
 // Pull-to-refresh is ignored if the location was fetched within this window.
 const MANUAL_REFRESH_COOLDOWN = 5 * 60 * 1000;
