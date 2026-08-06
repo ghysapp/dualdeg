@@ -115,7 +115,24 @@
           "userTrackingPermission": "This lets us show you more relevant ads. Your choice is respected either way."
         }
       ],
-      "react-native-iap"
+      "react-native-iap",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://dl-maven-android.mintegral.com/repository/mbridge_android_sdk_oversea"
+            ]
+          },
+          "ios": {
+            "extraPods": [
+              { "name": "GoogleMobileAdsMediationAppLovin" },
+              { "name": "GoogleMobileAdsMediationMintegral" }
+            ]
+          }
+        }
+      ],
+      "./plugins/withMediationAdapters"
     ],
     "experiments": {
       "typedRoutes": true,
