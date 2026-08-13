@@ -47,6 +47,37 @@ const WEATHER_SOURCES: Credit[] = [
   },
 ];
 
+const AIR_QUALITY_SOURCES: Credit[] = [
+  {
+    title: 'U.S. EPA AirNow',
+    subtitle: 'United States · EPA, NOAA, NPS, tribal, state & local agencies',
+    url: 'https://www.airnow.gov/',
+  },
+  {
+    title: 'Umweltbundesamt (UBA)',
+    subtitle: 'Germany · Luftdaten · Data licence Germany – attribution 2.0',
+    url: 'https://www.umweltbundesamt.de/daten/luft/luftdaten',
+  },
+  {
+    title: 'Atmo France',
+    subtitle: 'France · ATMO index from the regional AASQA networks · Licence Ouverte',
+    url: 'https://www.atmo-france.org/',
+  },
+  {
+    title: 'MET Norway · NILU',
+    subtitle: 'Norway · Air quality forecast · Licensed under NLOD / CC BY 4.0',
+    url: 'https://luftkvalitet.miljodirektoratet.no/',
+  },
+];
+
+const UV_SOURCES: Credit[] = [
+  {
+    title: 'U.S. EPA Envirofacts',
+    subtitle: 'United States · UV index · Public domain',
+    url: 'https://www.epa.gov/enviro/web-services',
+  },
+];
+
 const OPEN_SOURCE: Credit[] = [
   {
     title: 'Natural Earth',
@@ -111,6 +142,14 @@ export default function AttributionScreen() {
             {strings.attributionIntro.toUpperCase()}
           </Text>
           {renderCard(WEATHER_SOURCES)}
+
+          <Text style={[styles.sectionLabel, { color: c.subtext, marginTop: 28 }]}>
+            {strings.airQuality.toUpperCase()}
+          </Text>
+          {renderCard(AIR_QUALITY_SOURCES)}
+
+          <Text style={[styles.sectionLabel, { color: c.subtext, marginTop: 28 }]}>UV</Text>
+          {renderCard(UV_SOURCES)}
 
           <Text style={[styles.sectionLabel, { color: c.subtext, marginTop: 28 }]}>
             OPEN SOURCE & ASSETS

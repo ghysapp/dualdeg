@@ -47,6 +47,17 @@ interface RawForecastResponse {
     wind_kph: number;
     wind_dir: string;
     precip_mm: number;
+    /** Only present with `aqi=yes`; indices are absent on some plans. */
+    air_quality?: {
+      co?: number;
+      no2?: number;
+      o3?: number;
+      so2?: number;
+      pm2_5?: number;
+      pm10?: number;
+      'us-epa-index'?: number;
+      'gb-defra-index'?: number;
+    };
   };
   forecast: {
     forecastday: RawForecastDay[];
@@ -90,6 +101,7 @@ interface RawHour {
   wind_kph: number;
   wind_dir: string;
   chance_of_rain: number;
+  uv: number;
 }
 
 interface RawSearchResult {
@@ -119,6 +131,8 @@ export interface HourForecast {
   conditionCode: number;
   isDay: boolean;
   chanceOfRain: number;
+  /** UV index for this hour, where the provider reports one. */
+  uv?: number;
 }
 
 export interface DayForecast {
@@ -159,6 +173,32 @@ export interface DayForecast {
   hours?: HourForecast[];
 }
 
+/**
+ * Current air quality, normalized across national indices.
+ *
+ * Every country publishes its own scale (US AQI 0–500 in six categories, the
+ * French ATMO index 1–6, the German UBA index 0–4, NILU's 1–4 in Norway), and
+ * they aren't interchangeable. So the shared piece is `band` — a 1–6 severity
+ * level each source is mapped onto, driving one colour ramp and one localized
+ * label — while `index` carries the native number only where users recognize it
+ * (the US AQI). `source` is shown in the UI: these are different authorities
+ * measuring different things, and the reading shouldn't be presented as ours.
+ */
+export interface AirQuality {
+  /** Severity, 1 (good) – 6 (extremely poor). */
+  band: number;
+  /** Native index value, where it's a number users know (US AQI). */
+  index?: number;
+  /** Dominant pollutant symbol ("PM2.5", "O3", …), when the source names one. */
+  pollutant?: string;
+  /** Publishing authority, for attribution ("AirNow", "Airparif", …). */
+  source: string;
+  /** Reporting area, nearest station, or commune the reading belongs to. */
+  area?: string;
+  /** Observation/forecast time, epoch seconds. */
+  observedAt?: number;
+}
+
 export interface WeatherData {
   location: {
     name: string;
@@ -196,9 +236,19 @@ export interface WeatherData {
     moonPhase: string;
     /** Illuminated fraction of the moon, 0–100. */
     moonIllumination: number;
+    /** Peak UV index for today, where a source covers this location. */
+    uv?: number;
+    /**
+     * True when `uv` is a clear-sky figure (MET Norway publishes no other
+     * kind), i.e. the maximum possible ignoring cloud cover. Surfaced in the UI
+     * so it isn't read as the same number the cloud-adjusted sources give.
+     */
+    uvClearSky?: boolean;
   };
   hours: HourForecast[];
   days: DayForecast[];
+  /** Current air quality, when a source covers this location. */
+  airQuality?: AirQuality;
 }
 
 export interface CitySearchResult {
@@ -288,7 +338,8 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
   const raw = await request<RawForecastResponse>('forecast.json', {
     q: query,
     days: String(FORECAST_DAYS),
-    aqi: 'no',
+    // Air quality rides along on this call rather than costing a second one.
+    aqi: 'yes',
     alerts: 'no',
     ...(lang ? { lang } : {}),
   });
@@ -309,6 +360,7 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
     conditionCode: h.condition.code,
     isDay: h.is_day === 1,
     chanceOfRain: h.chance_of_rain,
+    uv: Number.isFinite(h.uv) ? Math.round(h.uv) : undefined,
   });
 
   // Flatten every forecast hour, then keep the current hour onward (24 of them).
@@ -389,10 +441,23 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
       sunset: today.astro.sunset,
       moonPhase: today.astro.moon_phase,
       moonIllumination: Number(today.astro.moon_illumination) || 0,
+      uv: Number.isFinite(today.day.uv) ? Math.round(today.day.uv) : undefined,
     },
     hours,
     days: dayForecasts,
+    airQuality: toAirQuality(raw.current.air_quality),
   };
+}
+
+/**
+ * WeatherAPI's `us-epa-index` is already the six EPA categories (1 Good …
+ * 6 Hazardous), so it maps straight onto our band. The plan determines whether
+ * the indices come back at all, hence the guard.
+ */
+function toAirQuality(aq: RawForecastResponse['current']['air_quality']): AirQuality | undefined {
+  const epa = aq?.['us-epa-index'];
+  if (!epa || !Number.isFinite(epa)) return undefined;
+  return { band: Math.min(6, Math.max(1, Math.round(epa))), source: 'WeatherAPI.com' };
 }
 
 /** City autocomplete for the add-city screen. */

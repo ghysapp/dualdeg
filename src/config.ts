@@ -44,6 +44,47 @@ export const BRIGHTSKY_API_BASE = 'https://api.brightsky.dev';
 export const METNO_API_BASE = 'https://api.met.no/weatherapi/locationforecast/2.0';
 export const METNO_USER_AGENT = 'dualdeg-weather/1.0 github.com/ghysapp (anthony.ghys@gmail.com)';
 
+/**
+ * Air quality. Each country is served by its own national authority — none of
+ * these spend the WeatherAPI quota, and all are free:
+ *   - US      → EPA AirNow. The only one needing a key (free, but per-user):
+ *               register at docs.airnowapi.org and set EXPO_PUBLIC_AIRNOW_KEY.
+ *               Without it, US locations simply show no air quality.
+ *   - Germany → Umweltbundesamt (UBA) hourly station measurements, no key.
+ *   - France  → Atmo France, the national aggregate of the regional AASQA
+ *               networks, published as a per-commune ATMO index (WFS), no key.
+ *   - Norway  → MET Norway's air quality forecast (NILU model), no key; uses
+ *               the same User-Agent as the forecast API.
+ * Everywhere else, WeatherAPI's `aqi=yes` rides along on the forecast call it
+ * already makes, so it costs nothing extra.
+ */
+export const AIRNOW_API_BASE = 'https://www.airnowapi.org';
+/**
+ * EPA Envirofacts UV service — free, keyless, lat/lon addressable. NWS has no
+ * UV of its own, so US locations get theirs from here (today only; there is no
+ * multi-day UV forecast).
+ */
+export const EPA_UV_API_BASE = 'https://data.epa.gov/efservice';
+export const AIRNOW_API_KEY = process.env.EXPO_PUBLIC_AIRNOW_KEY ?? '';
+export const HAS_AIRNOW_KEY = AIRNOW_API_KEY.length > 0;
+export const UBA_API_BASE = 'https://luftdaten.umweltbundesamt.de/api/air-data/v3';
+export const ATMO_FRANCE_WFS = 'https://data.atmo-france.org/geoserver/ind/ows';
+export const METNO_AIRQUALITY_BASE = 'https://api.met.no/weatherapi/airqualityforecast/0.1';
+
+/**
+ * How long an air quality reading is reused before any source is called again.
+ * Deliberately longer than the forecast TTLs: pollution moves slowly, most of
+ * these sources only publish hourly (France, daily), and there's no reason for
+ * a pull-to-refresh to re-hit a national authority.
+ */
+export const AIR_QUALITY_TTL = 3 * 60 * 60 * 1000;
+
+/**
+ * UBA's station list is ~110 KB and changes a few times a year, so it's cached
+ * far longer than any measurement.
+ */
+export const UBA_STATIONS_TTL = 30 * 24 * 60 * 60 * 1000;
+
 /** GeoIP fallback (approximate location from IP when GPS isn't granted). */
 export const GEOIP_API_URL = process.env.EXPO_PUBLIC_GEOIP_API_URL ?? '';
 export const GEOIP_API_KEY = process.env.EXPO_PUBLIC_GEOIP_API_KEY ?? '';

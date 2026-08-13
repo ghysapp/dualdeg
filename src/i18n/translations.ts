@@ -81,6 +81,14 @@ export interface Strings {
   temperature: string;
   language: string;
 
+  airQuality: string;
+  /** Six severity levels, best → worst. */
+  aqBands: string[];
+  /** Five UV exposure levels, low → extreme. */
+  uvBands: string[];
+  /** Qualifier for providers that only publish a clear-sky UV figure. */
+  uvClearSky: string;
+
   locationError: string;
   loadError: string;
   tryAgain: string;
@@ -99,6 +107,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperature reference',
     temperature: 'Temperature', language: 'Language',
     locationError: 'Unable to determine your location. Enable location access to see local weather.', loadError: 'Something went wrong loading weather.', tryAgain: 'Try again',
+    airQuality: 'Air quality', aqBands: ['Good', 'Fair', 'Moderate', 'Poor', 'Very poor', 'Extremely poor'],
+    uvBands: ['Low', 'Moderate', 'High', 'Very high', 'Extreme'], uvClearSky: 'Clear sky',
   },
   es: {
     current: 'Actual', add: 'Añadir', settings: 'Ajustes', done: 'Listo',
@@ -112,6 +122,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Referencia de temperatura',
     temperature: 'Temperatura', language: 'Idioma',
     locationError: 'No se pudo determinar tu ubicación. Activa el acceso a la ubicación para ver el clima local.', loadError: 'Algo salió mal al cargar el clima.', tryAgain: 'Reintentar',
+    airQuality: 'Calidad del aire', aqBands: ['Buena', 'Razonable', 'Regular', 'Mala', 'Muy mala', 'Extremadamente mala'],
+    uvBands: ['Bajo', 'Moderado', 'Alto', 'Muy alto', 'Extremo'], uvClearSky: 'Cielo despejado',
   },
   zh: {
     current: '当前', add: '添加', settings: '设置', done: '完成',
@@ -125,6 +137,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: '温度对照',
     temperature: '温度', language: '语言',
     locationError: '无法确定您的位置。请启用位置访问以查看本地天气。', loadError: '加载天气时出错。', tryAgain: '重试',
+    airQuality: '空气质量', aqBands: ['优', '良', '中等', '较差', '很差', '极差'],
+    uvBands: ['低', '中等', '高', '很高', '极高'], uvClearSky: '晴空值',
   },
   ja: {
     current: '現在地', add: '追加', settings: '設定', done: '完了',
@@ -138,6 +152,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: '気温の対照表',
     temperature: '温度', language: '言語',
     locationError: '現在地を特定できません。現地の天気を見るには位置情報を有効にしてください。', loadError: '天気の読み込み中に問題が発生しました。', tryAgain: '再試行',
+    airQuality: '大気質', aqBands: ['良好', 'まずまず', '普通', '悪い', '非常に悪い', '極めて悪い'],
+    uvBands: ['弱い', '中程度', '強い', '非常に強い', '極めて強い'], uvClearSky: '快晴時',
   },
   de: {
     current: 'Aktuell', add: 'Hinzufügen', settings: 'Einstellungen', done: 'Fertig',
@@ -151,6 +167,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperaturreferenz',
     temperature: 'Temperatur', language: 'Sprache',
     locationError: 'Standort konnte nicht ermittelt werden. Aktiviere den Standortzugriff, um das lokale Wetter zu sehen.', loadError: 'Beim Laden des Wetters ist etwas schiefgelaufen.', tryAgain: 'Erneut versuchen',
+    airQuality: 'Luftqualität', aqBands: ['Gut', 'Ausreichend', 'Mäßig', 'Schlecht', 'Sehr schlecht', 'Äußerst schlecht'],
+    uvBands: ['Niedrig', 'Mäßig', 'Hoch', 'Sehr hoch', 'Extrem'], uvClearSky: 'Klarer Himmel',
   },
   fr: {
     current: 'Actuel', add: 'Ajouter', settings: 'Réglages', done: 'OK',
@@ -164,6 +182,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Référence de température',
     temperature: 'Température', language: 'Langue',
     locationError: 'Impossible de déterminer votre position. Activez l’accès à la localisation pour voir la météo locale.', loadError: 'Une erreur est survenue lors du chargement de la météo.', tryAgain: 'Réessayer',
+    airQuality: 'Qualité de l’air', aqBands: ['Bon', 'Moyen', 'Dégradé', 'Mauvais', 'Très mauvais', 'Extrêmement mauvais'],
+    uvBands: ['Faible', 'Modéré', 'Élevé', 'Très élevé', 'Extrême'], uvClearSky: 'Ciel clair',
   },
   pt: {
     current: 'Atual', add: 'Adicionar', settings: 'Ajustes', done: 'Concluído',
@@ -177,6 +197,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Referência de temperatura',
     temperature: 'Temperatura', language: 'Idioma',
     locationError: 'Não foi possível determinar sua localização. Ative o acesso à localização para ver o clima local.', loadError: 'Algo deu errado ao carregar o clima.', tryAgain: 'Tentar novamente',
+    airQuality: 'Qualidade do ar', aqBands: ['Boa', 'Razoável', 'Moderada', 'Fraca', 'Muito fraca', 'Extremamente fraca'],
+    uvBands: ['Baixo', 'Moderado', 'Alto', 'Muito alto', 'Extremo'], uvClearSky: 'Céu limpo',
   },
   ko: {
     current: '현재 위치', add: '추가', settings: '설정', done: '완료',
@@ -190,6 +212,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: '온도 대조표',
     temperature: '온도', language: '언어',
     locationError: '위치를 확인할 수 없습니다. 현지 날씨를 보려면 위치 접근을 허용하세요.', loadError: '날씨를 불러오는 중 문제가 발생했습니다.', tryAgain: '다시 시도',
+    airQuality: '대기질', aqBands: ['좋음', '양호', '보통', '나쁨', '매우 나쁨', '극도로 나쁨'],
+    uvBands: ['낮음', '보통', '높음', '매우 높음', '위험'], uvClearSky: '맑은 하늘 기준',
   },
   ar: {
     current: 'الحالي', add: 'إضافة', settings: 'الإعدادات', done: 'تم',
@@ -203,6 +227,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'مرجع درجات الحرارة',
     temperature: 'درجة الحرارة', language: 'اللغة',
     locationError: 'تعذّر تحديد موقعك. فعّل الوصول إلى الموقع لرؤية الطقس المحلي.', loadError: 'حدث خطأ أثناء تحميل الطقس.', tryAgain: 'حاول مرة أخرى',
+    airQuality: 'جودة الهواء', aqBands: ['جيدة', 'مقبولة', 'متوسطة', 'رديئة', 'رديئة جدًا', 'سيئة للغاية'],
+    uvBands: ['منخفض', 'متوسط', 'مرتفع', 'مرتفع جدًا', 'شديد'], uvClearSky: 'سماء صافية',
   },
   hi: {
     current: 'वर्तमान', add: 'जोड़ें', settings: 'सेटिंग्स', done: 'पूर्ण',
@@ -216,6 +242,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'तापमान संदर्भ',
     temperature: 'तापमान', language: 'भाषा',
     locationError: 'आपका स्थान निर्धारित नहीं हो सका। स्थानीय मौसम देखने के लिए स्थान पहुँच सक्षम करें।', loadError: 'मौसम लोड करने में कुछ गड़बड़ हुई।', tryAgain: 'पुनः प्रयास करें',
+    airQuality: 'वायु गुणवत्ता', aqBands: ['अच्छी', 'ठीक', 'मध्यम', 'खराब', 'बहुत खराब', 'अत्यंत खराब'],
+    uvBands: ['कम', 'मध्यम', 'उच्च', 'बहुत उच्च', 'अत्यधिक'], uvClearSky: 'साफ़ आसमान',
   },
   it: {
     current: 'Attuale', add: 'Aggiungi', settings: 'Impostazioni', done: 'Fatto',
@@ -229,6 +257,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Riferimento temperatura',
     temperature: 'Temperatura', language: 'Lingua',
     locationError: 'Impossibile determinare la tua posizione. Abilita l’accesso alla posizione per vedere il meteo locale.', loadError: 'Si è verificato un errore durante il caricamento del meteo.', tryAgain: 'Riprova',
+    airQuality: 'Qualità dell’aria', aqBands: ['Buona', 'Discreta', 'Moderata', 'Scarsa', 'Molto scarsa', 'Estremamente scarsa'],
+    uvBands: ['Basso', 'Moderato', 'Alto', 'Molto alto', 'Estremo'], uvClearSky: 'Cielo sereno',
   },
   nl: {
     current: 'Huidige', add: 'Toevoegen', settings: 'Instellingen', done: 'Klaar',
@@ -242,6 +272,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperatuurreferentie',
     temperature: 'Temperatuur', language: 'Taal',
     locationError: 'Kan je locatie niet bepalen. Schakel locatietoegang in om lokaal weer te zien.', loadError: 'Er ging iets mis bij het laden van het weer.', tryAgain: 'Opnieuw proberen',
+    airQuality: 'Luchtkwaliteit', aqBands: ['Goed', 'Redelijk', 'Matig', 'Slecht', 'Zeer slecht', 'Extreem slecht'],
+    uvBands: ['Laag', 'Matig', 'Hoog', 'Zeer hoog', 'Extreem'], uvClearSky: 'Heldere hemel',
   },
   sv: {
     current: 'Aktuell', add: 'Lägg till', settings: 'Inställningar', done: 'Klar',
@@ -255,6 +287,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperaturreferens',
     temperature: 'Temperatur', language: 'Språk',
     locationError: 'Det gick inte att fastställa din plats. Aktivera platsåtkomst för att se lokalt väder.', loadError: 'Något gick fel när vädret laddades.', tryAgain: 'Försök igen',
+    airQuality: 'Luftkvalitet', aqBands: ['God', 'Skälig', 'Måttlig', 'Dålig', 'Mycket dålig', 'Extremt dålig'],
+    uvBands: ['Låg', 'Måttlig', 'Hög', 'Mycket hög', 'Extrem'], uvClearSky: 'Klar himmel',
   },
   no: {
     current: 'Nåværende', add: 'Legg til', settings: 'Innstillinger', done: 'Ferdig',
@@ -268,6 +302,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperaturreferanse',
     temperature: 'Temperatur', language: 'Språk',
     locationError: 'Kunne ikke fastslå posisjonen din. Aktiver posisjonstilgang for å se lokalt vær.', loadError: 'Noe gikk galt under lasting av været.', tryAgain: 'Prøv igjen',
+    airQuality: 'Luftkvalitet', aqBands: ['God', 'Tilfredsstillende', 'Moderat', 'Dårlig', 'Svært dårlig', 'Ekstremt dårlig'],
+    uvBands: ['Lav', 'Moderat', 'Høy', 'Svært høy', 'Ekstrem'], uvClearSky: 'Klar himmel',
   },
   da: {
     current: 'Nuværende', add: 'Tilføj', settings: 'Indstillinger', done: 'Færdig',
@@ -281,6 +317,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Temperaturreference',
     temperature: 'Temperatur', language: 'Sprog',
     locationError: 'Din placering kunne ikke bestemmes. Aktivér placeringsadgang for at se lokalt vejr.', loadError: 'Noget gik galt under indlæsning af vejret.', tryAgain: 'Prøv igen',
+    airQuality: 'Luftkvalitet', aqBands: ['God', 'Rimelig', 'Moderat', 'Ringe', 'Meget ringe', 'Ekstremt ringe'],
+    uvBands: ['Lav', 'Moderat', 'Høj', 'Meget høj', 'Ekstrem'], uvClearSky: 'Klar himmel',
   },
   el: {
     current: 'Τρέχουσα', add: 'Προσθήκη', settings: 'Ρυθμίσεις', done: 'Τέλος',
@@ -294,6 +332,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Αναφορά θερμοκρασίας',
     temperature: 'Θερμοκρασία', language: 'Γλώσσα',
     locationError: 'Δεν ήταν δυνατός ο προσδιορισμός της τοποθεσίας σας. Ενεργοποιήστε την πρόσβαση τοποθεσίας για να δείτε τον τοπικό καιρό.', loadError: 'Παρουσιάστηκε σφάλμα κατά τη φόρτωση του καιρού.', tryAgain: 'Δοκιμάστε ξανά',
+    airQuality: 'Ποιότητα αέρα', aqBands: ['Καλή', 'Ικανοποιητική', 'Μέτρια', 'Κακή', 'Πολύ κακή', 'Εξαιρετικά κακή'],
+    uvBands: ['Χαμηλός', 'Μέτριος', 'Υψηλός', 'Πολύ υψηλός', 'Ακραίος'], uvClearSky: 'Καθαρός ουρανός',
   },
   pl: {
     current: 'Bieżąca', add: 'Dodaj', settings: 'Ustawienia', done: 'Gotowe',
@@ -307,6 +347,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Odniesienie temperatury',
     temperature: 'Temperatura', language: 'Język',
     locationError: 'Nie można ustalić Twojej lokalizacji. Włącz dostęp do lokalizacji, aby zobaczyć lokalną pogodę.', loadError: 'Coś poszło nie tak podczas ładowania pogody.', tryAgain: 'Spróbuj ponownie',
+    airQuality: 'Jakość powietrza', aqBands: ['Dobra', 'Umiarkowana', 'Dostateczna', 'Zła', 'Bardzo zła', 'Skrajnie zła'],
+    uvBands: ['Niski', 'Umiarkowany', 'Wysoki', 'Bardzo wysoki', 'Ekstremalny'], uvClearSky: 'Czyste niebo',
   },
   ru: {
     current: 'Текущее', add: 'Добавить', settings: 'Настройки', done: 'Готово',
@@ -320,6 +362,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Справочник температур',
     temperature: 'Температура', language: 'Язык',
     locationError: 'Не удалось определить ваше местоположение. Включите доступ к геолокации, чтобы видеть местную погоду.', loadError: 'Не удалось загрузить погоду.', tryAgain: 'Повторить',
+    airQuality: 'Качество воздуха', aqBands: ['Хорошее', 'Удовлетворительное', 'Умеренное', 'Плохое', 'Очень плохое', 'Крайне плохое'],
+    uvBands: ['Низкий', 'Умеренный', 'Высокий', 'Очень высокий', 'Экстремальный'], uvClearSky: 'Ясное небо',
   },
   uk: {
     current: 'Поточне', add: 'Додати', settings: 'Налаштування', done: 'Готово',
@@ -333,6 +377,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     tempReference: 'Довідник температур',
     temperature: 'Температура', language: 'Мова',
     locationError: 'Не вдалося визначити ваше місцезнаходження. Увімкніть доступ до геолокації, щоб бачити місцеву погоду.', loadError: 'Не вдалося завантажити погоду.', tryAgain: 'Спробувати ще раз',
+    airQuality: 'Якість повітря', aqBands: ['Добра', 'Задовільна', 'Помірна', 'Погана', 'Дуже погана', 'Вкрай погана'],
+    uvBands: ['Низький', 'Помірний', 'Високий', 'Дуже високий', 'Екстремальний'], uvClearSky: 'Ясне небо',
   },
 };
 

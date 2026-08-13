@@ -73,6 +73,11 @@ export function HourlyStrip({ hours, sky }: { hours: HourForecast[]; sky: SkyThe
               />
               <Text style={[styles.meta, { color: sky.textPrimary }]}>💧 {h.humidity}%</Text>
               <Text style={[styles.metaRain, { color: sky.textPrimary }]}>☔ {h.chanceOfRain}%</Text>
+              {/* Only where the provider gives UV, and only while the sun is
+                  actually up — a column of "UV 0" through the night is noise. */}
+              {h.uv != null && h.uv > 0 && (
+                <Text style={[styles.metaRain, { color: sky.textPrimary }]}>☀️ UV {h.uv}</Text>
+              )}
             </View>
           );
         })}

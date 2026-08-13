@@ -12,6 +12,7 @@
 
 import { MAX_FUTURE_DAYS, NWS_API_BASE, NWS_USER_AGENT } from '@/config';
 import { computeAstro, isDaylightAt } from '@/services/astronomy';
+import { fetchEpaUv } from '@/services/epaUv';
 import { conditionFromIcon, conditionText } from '@/i18n/conditions';
 import { dateInTz, localNow } from '@/utils/tz';
 import { cToF, feelsLikeC } from '@/utils/units';
@@ -129,11 +130,13 @@ export async function fetchNwsForecast(
   const name: string = pp.relativeLocation?.properties?.city ?? 'Current location';
   const region: string = pp.relativeLocation?.properties?.state ?? '';
 
-  const [hourly, daily, grid] = await Promise.all([
+  const [hourly, daily, grid, uv] = await Promise.all([
     nws(`${pp.forecastHourly}?units=si`),
     nws(`${pp.forecast}?units=si`),
     // Raw grid gives precip amounts; optional — never fail the forecast for it.
     nws(`${pp.forecastGridData}`).catch(() => null),
+    // NWS has no UV, so it comes from the EPA. Optional in the same way.
+    fetchEpaUv(rlat, rlon).catch(() => null),
   ]);
 
   const hPeriods: any[] = hourly.properties?.periods ?? [];
@@ -144,6 +147,12 @@ export async function fetchNwsForecast(
   const now = Date.now();
   const precip = precipFromGrid(grid, tz, todayDate, now);
 
+  /** Whole days from today's local date; the key EPA's UV map is built on. */
+  const dayOffsetOf = (date: string) =>
+    Math.round(
+      (Date.parse(`${date}T00:00:00Z`) - Date.parse(`${todayDate}T00:00:00Z`)) / 86400000,
+    );
+
   const toHour = (p: any, isNow: boolean): HourForecast => {
     // NWS's `isDaytime` is a coarse 6am–6pm split, not the real sunrise/sunset,
     // so derive day/night from the actual sun position instead.
@@ -151,9 +160,11 @@ export async function fetchNwsForecast(
     const humidity = p.relativeHumidity?.value ?? 0;
     const windKph = parseWindKph(p.windSpeed);
     const flC = feelsLikeC(p.temperature, humidity, windKph);
+    const date = String(p.startTime).slice(0, 10);
+    const hour24 = Number(String(p.startTime).slice(11, 13));
     return {
       timeEpoch: Math.floor(new Date(p.startTime).getTime() / 1000),
-      hour24: Number(String(p.startTime).slice(11, 13)),
+      hour24,
       isNow,
       tempC: Math.round(p.temperature),
       tempF: Math.round(cToF(p.temperature)),
@@ -163,6 +174,7 @@ export async function fetchNwsForecast(
       conditionCode: conditionFromIcon(p.icon, isDay).code,
       isDay,
       chanceOfRain: p.probabilityOfPrecipitation?.value ?? 0,
+      uv: uv?.byHour.get(`${dayOffsetOf(date)}:${hour24}`),
     };
   };
 
@@ -207,11 +219,23 @@ export async function fetchNwsForecast(
   const futureDates = [...byDate.keys()].filter((d) => d > todayDate).sort().slice(0, MAX_FUTURE_DAYS);
   const days: DayForecast[] = futureDates.map((d, i) => {
     const e = byDate.get(d)!;
-    const hi = e.high ?? e.low ?? 0;
-    const lo = e.low ?? e.high ?? 0;
     const dayPeriods = hoursByDate.get(d) ?? [];
     const dayHours = dayPeriods.map((p) => toHour(p, false));
     const summary = summarizeDayHours(dayHours);
+
+    // The 12-hour periods pair a day's high with the *following* night's low,
+    // and the last day of the forecast has no night period at all — its low
+    // would then collapse onto its high. So take the calendar-day range from
+    // the hourly series (the same basis as `today`, and exactly what the day
+    // screen's hourly strip shows), and fall back to the 12-hour periods only
+    // where hourly no longer reaches far enough to cover the day.
+    const temps = dayHours.map((h) => h.tempC).filter((t) => Number.isFinite(t));
+    const hourlyHi = temps.length ? Math.max(...temps) : undefined;
+    const hourlyLo = temps.length ? Math.min(...temps) : undefined;
+    const fullDay = temps.length >= 12;
+    const hi = (fullDay ? hourlyHi : (e.high ?? hourlyHi)) ?? e.low ?? 0;
+    const lo = (fullDay ? hourlyLo : (e.low ?? hourlyLo)) ?? e.high ?? 0;
+
     const windiest = dayPeriods.reduce(
       (x, y) => (parseWindKph(y.windSpeed) > parseWindKph(x.windSpeed) ? y : x),
       dayPeriods[0],
@@ -295,6 +319,7 @@ export async function fetchNwsForecast(
       sunset: astro.sunset,
       moonPhase: astro.moonPhase,
       moonIllumination: astro.moonIllumination,
+      uv: uv?.peak,
     },
     hours,
     days,

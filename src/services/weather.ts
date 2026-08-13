@@ -7,8 +7,9 @@
  */
 
 import { languageToApiLang, type LanguageCode } from '@/i18n/translations';
+import { fetchAirQuality } from '@/services/airQuality';
 import { PROVIDERS, type ProviderContext } from '@/services/providers';
-import { fetchForecast, type WeatherData } from '@/services/weatherApi';
+import { fetchForecast, type AirQuality, type WeatherData } from '@/services/weatherApi';
 
 export interface ForecastRequest {
   /** WeatherAPI `q` value ("lat,lon", "id:123", or a postal code). */
@@ -25,6 +26,13 @@ export interface ForecastRequest {
 export async function fetchWeather(req: ForecastRequest): Promise<WeatherData> {
   const { query, coords, country, place, language } = req;
 
+  // Air quality comes from a different set of national authorities than the
+  // forecast, so it's kicked off up front and merged in at the end — it costs
+  // nothing to run alongside, and a failure here must never cost us a forecast.
+  const airQuality = coords
+    ? fetchAirQuality({ coords, country: country ?? null }).catch(() => null)
+    : Promise.resolve(null);
+
   if (coords) {
     const ctx: ProviderContext = { coords, country: country ?? null, place: place ?? null, language };
     for (const provider of PROVIDERS) {
@@ -32,7 +40,7 @@ export async function fetchWeather(req: ForecastRequest): Promise<WeatherData> {
       try {
         const data = await provider.fetch(ctx);
         if (__DEV__) console.log(`[wx] ${provider.id} served "${query}"`);
-        return data;
+        return withAirQuality(data, await airQuality);
       } catch (e) {
         if (__DEV__) {
           console.log(
@@ -45,5 +53,11 @@ export async function fetchWeather(req: ForecastRequest): Promise<WeatherData> {
   }
 
   if (__DEV__) console.log(`[wx] WeatherAPI served "${query}"`);
-  return fetchForecast(query, languageToApiLang(language));
+  // WeatherAPI already returns air quality on the forecast call itself, so a
+  // national reading only overrides it when one was actually available.
+  return withAirQuality(await fetchForecast(query, languageToApiLang(language)), await airQuality);
+}
+
+function withAirQuality(data: WeatherData, airQuality: AirQuality | null): WeatherData {
+  return airQuality ? { ...data, airQuality } : data;
 }

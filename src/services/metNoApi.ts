@@ -74,6 +74,12 @@ export async function fetchMetNoForecast(
 
   const detailsOf = (e: any) => e?.data?.instant?.details ?? {};
 
+  /** Day's peak UV, or undefined past the horizon where met.no stops giving it. */
+  const maxUv = (values: (number | undefined)[]): number | undefined => {
+    const found = values.filter((v): v is number => Number.isFinite(v));
+    return found.length ? Math.round(Math.max(...found)) : undefined;
+  };
+
   const toHour = (e: any, isNow: boolean): HourForecast => {
     const ms = Date.parse(e.time);
     const hour24 = hourInTz(ms, tz);
@@ -96,6 +102,11 @@ export async function fetchMetNoForecast(
       conditionCode: conditionFromMetNo(symbol, isDay).code,
       isDay,
       chanceOfRain: Math.round(popOf(e)),
+      // Clear-sky UV — the only kind met.no publishes, and only on the hourly
+      // part of the series (roughly the first three days).
+      uv: Number.isFinite(dt.ultraviolet_index_clear_sky)
+        ? Math.round(dt.ultraviolet_index_clear_sky)
+        : undefined,
     };
   };
 
@@ -120,6 +131,7 @@ export async function fetchMetNoForecast(
       pop: Math.round(Math.max(0, ...list.map(popOf))),
       precip: list.reduce((s, e) => s + precipOf(e), 0),
       code: conditionFromMetNo(symbolOf(noon), true).code,
+      uv: maxUv(list.map((e) => detailsOf(e).ultraviolet_index_clear_sky)),
     };
   };
 
@@ -211,6 +223,11 @@ export async function fetchMetNoForecast(
       sunset: astro.sunset,
       moonPhase: astro.moonPhase,
       moonIllumination: astro.moonIllumination,
+      // met.no's series starts at the current hour, so this is the peak over
+      // what's *left* of today — it decays to 0 after sunset, at which point
+      // the UI drops the card rather than showing a meaningless zero.
+      uv: todayAgg.uv,
+      uvClearSky: todayAgg.uv != null,
     },
     hours,
     days,

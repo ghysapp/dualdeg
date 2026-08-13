@@ -208,6 +208,8 @@ export async function fetchMeteoFranceForecast(
       sunset: astro.sunset,
       moonPhase: astro.moonPhase,
       moonIllumination: astro.moonIllumination,
+      // Daily only — Météo-France publishes no UV on its hourly series.
+      uv: Number.isFinite(today.uv) ? Math.round(today.uv) : undefined,
     },
     hours,
     days,
