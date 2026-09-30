@@ -28,7 +28,6 @@
       "versionCode": 6
     },
     "web": {
-      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -133,7 +132,8 @@
               {
                 "name": "GoogleMobileAdsMediationMintegral"
               }
-            ]
+            ],
+            "enableSceneSupport": true
           }
         }
       ],
