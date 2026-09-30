@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BannerAdBar } from '@/components/ads/BannerAdBar';
 import { AirAndUvRow } from '@/components/weather/AirAndUv';
 import { ApproxLocationBanner } from '@/components/weather/ApproxLocationBanner';
+import { DailyBriefing } from '@/components/weather/DailyBriefing';
 import { DailyOutlook } from '@/components/weather/DailyOutlook';
 import { HourlyStrip } from '@/components/weather/HourlyStrip';
 import { LocationPrimingModal } from '@/components/weather/LocationPrimingModal';
@@ -104,6 +105,7 @@ export default function HomeScreen() {
           ) : entry.data ? (
             <>
               <WeatherHero data={entry.data} sky={sky} />
+              <DailyBriefing key={activeTab.key} data={entry.data} sky={sky} />
               <MetricGrid data={entry.data} sky={sky} />
               <AirAndUvRow data={entry.data} sky={sky} />
               <HourlyStrip hours={entry.data.hours} sky={sky} />

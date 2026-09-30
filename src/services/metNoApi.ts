@@ -107,6 +107,10 @@ export async function fetchMetNoForecast(
       uv: Number.isFinite(dt.ultraviolet_index_clear_sky)
         ? Math.round(dt.ultraviolet_index_clear_sky)
         : undefined,
+      windKph,
+      gustKph: Number.isFinite(dt.wind_speed_of_gust) ? dt.wind_speed_of_gust * 3.6 : undefined,
+      // Only the 1-hour amount — the 6-hour one past the hourly horizon isn't per hour.
+      precipMm: e?.data?.next_1_hours?.details?.precipitation_amount,
     };
   };
 

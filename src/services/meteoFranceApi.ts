@@ -25,6 +25,11 @@ function weekdayIndexOf(date: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
+/** Météo-France reports wind in m/s; the app works in km/h. */
+function mpsToKph(mps: number | null | undefined): number {
+  return (mps ?? 0) * 3.6;
+}
+
 function iconIsDay(icon: string | undefined, epochMs: number, tz: string): boolean {
   if (icon) return !/n$/i.test(icon);
   const h = hourInTz(epochMs, tz);
@@ -98,6 +103,13 @@ export async function fetchMeteoFranceForecast(
       conditionCode: conditionFromMeteoFrance(e.weather?.icon, e.weather?.desc, isDay).code,
       isDay,
       chanceOfRain: probAt(e.dt),
+      windKph: mpsToKph(e.wind?.speed),
+      // 0 means "no gust reported", not a dead calm.
+      gustKph: e.wind?.gust ? mpsToKph(e.wind.gust) : undefined,
+      precipMm:
+        e.rain?.['1h'] != null || e.snow?.['1h'] != null
+          ? (e.rain?.['1h'] ?? 0) + (e.snow?.['1h'] ?? 0)
+          : undefined,
     };
   };
 
@@ -148,7 +160,7 @@ export async function fetchMeteoFranceForecast(
       feelsLikeC: summary.feelsLikeC,
       feelsLikeF: summary.feelsLikeF,
       avgHumidity: humAvg,
-      maxWindKph: windiest ? Math.round(windiest.wind?.speed ?? 0) || undefined : undefined,
+      maxWindKph: windiest ? Math.round(mpsToKph(windiest.wind?.speed)) || undefined : undefined,
       windDir: windiest ? degToCompass(windiest.wind?.direction) : undefined,
       totalPrecipMm: d.precipitation?.['24h'],
       uv: d.uv,
@@ -193,7 +205,7 @@ export async function fetchMeteoFranceForecast(
       feelsLikeC: Math.round(curFlC),
       feelsLikeF: Math.round(cToF(curFlC)),
       humidity: h0.humidity ?? 0,
-      windKph: Math.round(h0.wind?.speed ?? 0),
+      windKph: Math.round(mpsToKph(h0.wind?.speed)),
       windDir: degToCompass(h0.wind?.direction),
       precipMm: h0.rain?.['1h'] ?? 0,
     },

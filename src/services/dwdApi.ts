@@ -90,6 +90,9 @@ export async function fetchDwdForecast(
       conditionCode: conditionFromBrightSky(h.icon, h.condition).code,
       isDay,
       chanceOfRain: chanceOf(h),
+      windKph,
+      gustKph: h.wind_gust_speed ?? undefined,
+      precipMm: h.precipitation ?? undefined,
     };
   };
 

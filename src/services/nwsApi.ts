@@ -175,6 +175,7 @@ export async function fetchNwsForecast(
       isDay,
       chanceOfRain: p.probabilityOfPrecipitation?.value ?? 0,
       uv: uv?.byHour.get(`${dayOffsetOf(date)}:${hour24}`),
+      windKph,
     };
   };
 

@@ -100,6 +100,8 @@ interface RawHour {
   humidity: number;
   wind_kph: number;
   wind_dir: string;
+  gust_kph?: number;
+  precip_mm?: number;
   chance_of_rain: number;
   uv: number;
 }
@@ -133,6 +135,12 @@ export interface HourForecast {
   chanceOfRain: number;
   /** UV index for this hour, where the provider reports one. */
   uv?: number;
+  /** Sustained wind, km/h. */
+  windKph?: number;
+  /** Peak gust, km/h, where the provider reports one. */
+  gustKph?: number;
+  /** Precipitation amount for this hour, mm, where the provider reports one. */
+  precipMm?: number;
 }
 
 export interface DayForecast {
@@ -361,6 +369,9 @@ export async function fetchForecast(query: string, lang?: string): Promise<Weath
     isDay: h.is_day === 1,
     chanceOfRain: h.chance_of_rain,
     uv: Number.isFinite(h.uv) ? Math.round(h.uv) : undefined,
+    windKph: h.wind_kph,
+    gustKph: h.gust_kph,
+    precipMm: h.precip_mm,
   });
 
   // Flatten every forecast hour, then keep the current hour onward (24 of them).

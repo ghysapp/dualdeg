@@ -2,7 +2,7 @@ const { withAppBuildGradle, withGradleProperties } = require('@expo/config-plugi
 
 module.exports = function withAndroidSigning(config) {
   config = withAppBuildGradle(config, (config) => {
-    config.modResults.contents = applySigningConfig(config.modResults.contents);
+    config.modResults.contents = applyR8Optimization(applySigningConfig(config.modResults.contents));
     return config;
   });
 
@@ -54,4 +54,18 @@ function applySigningConfig(buildGradle) {
   );
 
   return buildGradle;
+}
+
+/**
+ * The template's `proguard-android.txt` carries `-dontoptimize`, so R8 only
+ * shrinks and obfuscates. Google Play requires at least 25% optimization,
+ * shrinking and obfuscation for apps over 10 MB of DEX (enforced from
+ * February 2027); ours is ~29 MB. The `-optimize` variant is the same file
+ * minus that line.
+ */
+function applyR8Optimization(buildGradle) {
+  return buildGradle.replace(
+    /getDefaultProguardFile\(["']proguard-android\.txt["']\)/,
+    'getDefaultProguardFile("proguard-android-optimize.txt")',
+  );
 }

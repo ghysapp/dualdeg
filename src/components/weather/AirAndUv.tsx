@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Strings } from '@/i18n/translations';
-import type { AirQuality, WeatherData } from '@/services/weatherApi';
+import type { AirQuality, HourForecast, WeatherData } from '@/services/weatherApi';
 import { useSettings } from '@/state/settings';
 import { Font } from '@/theme/fonts';
 import type { SkyTheme } from '@/theme/sky';
@@ -19,19 +19,17 @@ import type { SkyTheme } from '@/theme/sky';
 export function AirAndUvRow({ data, sky }: { data: WeatherData; sky: SkyTheme }) {
   const { strings } = useSettings();
   const aq = data.airQuality;
-  const uv = data.today.uv;
-  // A zero peak means the sun is done for the day (or already down when the
-  // provider only forecasts forward, as met.no does) — "UV 0 · Low" is noise,
-  // so the card steps aside and air quality takes the width.
-  const showUv = uv != null && uv > 0;
+  const uv = currentUv(data);
+  // Nothing left to be exposed to: the sun is down, or it's a night hour the
+  // provider only forecasts forward from (as met.no does). "UV 0 · Low" is
+  // noise, so the card steps aside and air quality takes the width.
+  const showUv = uv != null && (uv.value > 0 || (uv.peak ?? 0) > 0);
   if (!aq && !showUv) return null;
 
   return (
     <View style={styles.row}>
       {!!aq && <AirQualityCard aq={aq} sky={sky} strings={strings} />}
-      {showUv && (
-        <UvCard uv={uv} clearSky={!!data.today.uvClearSky} sky={sky} strings={strings} />
-      )}
+      {showUv && <UvCard uv={uv} sky={sky} strings={strings} />}
     </View>
   );
 }
@@ -112,36 +110,84 @@ function uvLevel(uv: number): number {
   return 4;
 }
 
+interface UvReading {
+  /** What to show as the headline number. */
+  value: number;
+  /** Highest UV still to come today, when it's above `value`. */
+  peak?: number;
+  /** True when `value` is itself the day's peak rather than a now-reading. */
+  isPeak: boolean;
+  /** True when the figure ignores cloud cover (met.no publishes no other kind). */
+  clearSky: boolean;
+}
+
+/**
+ * The remaining hours of the local day. `hours` runs forward from the current
+ * hour and crosses midnight, so the wrap in `hour24` is where today ends.
+ */
+function restOfToday(hours: HourForecast[]): HourForecast[] {
+  const out: HourForecast[] = [];
+  for (const h of hours) {
+    if (out.length && h.hour24 <= out[out.length - 1].hour24) break;
+    out.push(h);
+  }
+  return out;
+}
+
+/**
+ * UV as a *right now* reading, to match the air quality card beside it.
+ *
+ * `today.uv` is the day's peak, which is a different number entirely: at 8am in
+ * New York the sun gives UV 1 while the peak at noon is 7. So the hourly series
+ * leads, and the peak becomes context ("Peak 7") for what's still ahead. The
+ * peak is only the headline where a provider publishes no hourly UV at all
+ * (Météo-France), and then it's labelled as such.
+ */
+function currentUv(data: WeatherData): UvReading | null {
+  const clearSky = !!data.today.uvClearSky;
+  const today = restOfToday(data.hours);
+  const now = today.find((h) => h.isNow) ?? today[0];
+
+  if (now?.uv == null) {
+    return data.today.uv == null
+      ? null
+      : { value: data.today.uv, isPeak: true, clearSky };
+  }
+
+  const ahead = today.map((h) => h.uv).filter((v): v is number => v != null);
+  const peak = Math.max(...ahead);
+  return { value: now.uv, peak: peak > now.uv ? peak : undefined, isPeak: false, clearSky };
+}
+
 /**
  * Here the number leads — unlike air quality indices, the UV index is a single
  * scale people already read directly — with the exposure level as the caption.
+ * The peak sits in the corner slot, where the air quality card puts its AQI.
  */
-function UvCard({
-  uv,
-  clearSky,
-  sky,
-  strings,
-}: {
-  uv: number;
-  clearSky: boolean;
-  sky: SkyTheme;
-  strings: Strings;
-}) {
-  const level = uvLevel(uv);
-  const detail = [strings.uvBands[level], clearSky ? strings.uvClearSky : null]
+function UvCard({ uv, sky, strings }: { uv: UvReading; sky: SkyTheme; strings: Strings }) {
+  const level = uvLevel(uv.value);
+  const detail = [strings.uvBands[level], uv.clearSky ? strings.uvClearSky : null]
     .filter(Boolean)
     .join(' · ');
+  // "Peak 7" when it's still ahead; a bare "Peak" when the headline number is
+  // itself the day's peak and there's no now-reading to compare it against.
+  const peakLabel = uv.peak != null ? `${strings.uvPeak} ${uv.peak}` : uv.isPeak ? strings.uvPeak : null;
 
   return (
     <Card sky={sky}>
       <View style={styles.topRow}>
         <Text style={[styles.label, { color: sky.textSecondary }]}>UV</Text>
+        {!!peakLabel && (
+          <Text style={[styles.label, { color: sky.textSecondary }]}>
+            {peakLabel.toUpperCase()}
+          </Text>
+        )}
       </View>
 
       <View style={styles.valueRow}>
         <View style={[styles.dot, { backgroundColor: UV_COLORS[level] }]} />
         <Text style={[styles.value, { color: sky.textPrimary }]} numberOfLines={1}>
-          {Math.round(uv)}
+          {Math.round(uv.value)}
         </Text>
       </View>
 
