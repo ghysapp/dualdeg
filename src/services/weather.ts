@@ -10,6 +10,7 @@ import { languageToApiLang, type LanguageCode } from '@/i18n/translations';
 import { fetchAirQuality } from '@/services/airQuality';
 import { PROVIDERS, type ProviderContext } from '@/services/providers';
 import { fetchForecast, type AirQuality, type WeatherData } from '@/services/weatherApi';
+import { since } from '@/utils/devTrace';
 
 export interface ForecastRequest {
   /** WeatherAPI `q` value ("lat,lon", "id:123", or a postal code). */
@@ -39,12 +40,14 @@ export async function fetchWeather(req: ForecastRequest): Promise<WeatherData> {
       if (!provider.covers(ctx)) continue;
       try {
         const data = await provider.fetch(ctx);
-        if (__DEV__) console.log(`[wx] ${provider.id} served "${query}"`);
-        return withAirQuality(data, await airQuality);
+        if (__DEV__) console.log(`[wx] ${since()} ${provider.id} served "${query}"`);
+        const aq = await airQuality;
+        if (__DEV__) console.log(`[wx] ${since()} air quality ready`);
+        return withAirQuality(data, aq);
       } catch (e) {
         if (__DEV__) {
           console.log(
-            `[wx] ${provider.id} failed for "${query}", falling back:`,
+            `[wx] ${since()} ${provider.id} failed for "${query}", falling back:`,
             e instanceof Error ? e.message : e,
           );
         }
@@ -52,7 +55,7 @@ export async function fetchWeather(req: ForecastRequest): Promise<WeatherData> {
     }
   }
 
-  if (__DEV__) console.log(`[wx] WeatherAPI served "${query}"`);
+  if (__DEV__) console.log(`[wx] ${since()} WeatherAPI served "${query}"`);
   // WeatherAPI already returns air quality on the forecast call itself, so a
   // national reading only overrides it when one was actually available.
   return withAirQuality(await fetchForecast(query, languageToApiLang(language)), await airQuality);

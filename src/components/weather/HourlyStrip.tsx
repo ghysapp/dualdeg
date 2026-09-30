@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { Temp, TempDual } from '@/components/weather/Temp';
 import type { LanguageCode } from '@/i18n/translations';
@@ -19,26 +19,39 @@ function formatHour(hour24: number, language: LanguageCode): string {
   return `${String(hour24).padStart(2, '0')}:00`;
 }
 
+const CARD_W = 82;
+const GAP = 9;
+
+/**
+ * 24 hour cards, of which about four fit on screen. A virtualized list mounts
+ * the visible ones (plus a small buffer) instead of all ~500 views up front —
+ * the plain ScrollView cost ~0.5 s of JS on first render on a 4 GB phone.
+ */
 export function HourlyStrip({ hours, sky }: { hours: HourForecast[]; sky: SkyTheme }) {
   const { strings, tempOrder, language } = useSettings();
+  // Cards only stretch to the tallest *mounted* one, so when any hour shows
+  // UV, every card keeps that line's space — the row can't grow mid-scroll.
+  const anyUv = hours.some((h) => h.uv != null && h.uv > 0);
 
   return (
     <View style={styles.section}>
       <Text style={[styles.heading, { color: sky.textSecondary }]}>
         {strings.hourly.toUpperCase()}
       </Text>
-      <ScrollView
+      <FlatList
         horizontal
+        data={hours}
+        keyExtractor={(h) => String(h.timeEpoch)}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
-      >
-        {hours.map((h) => {
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        getItemLayout={(_, index) => ({ length: CARD_W + GAP, offset: (CARD_W + GAP) * index, index })}
+        renderItem={({ item: h }) => {
           const t = orderTemp(h.tempC, h.tempF, tempOrder);
           return (
-            <View
-              key={h.timeEpoch}
-              style={[styles.card, { backgroundColor: sky.cardBg, borderColor: sky.cardBorder }]}
-            >
+            <View style={[styles.card, { backgroundColor: sky.cardBg, borderColor: sky.cardBorder }]}>
               <Text style={[styles.time, { color: sky.textSecondary }]}>
                 {h.isNow ? strings.now : formatHour(h.hour24, language)}
               </Text>
@@ -75,14 +88,15 @@ export function HourlyStrip({ hours, sky }: { hours: HourForecast[]; sky: SkyThe
               <Text style={[styles.metaRain, { color: sky.textPrimary }]}>☔ {h.chanceOfRain}%</Text>
               {/* Only where the provider gives UV, and only while the sun is
                   actually up — a column of "UV 0" through the night is noise. */}
-              {h.uv != null && h.uv > 0 && (
-                <Text style={[styles.metaRain, { color: sky.textPrimary }]}>☀️ UV {h.uv}</Text>
+              {anyUv && (
+                <Text style={[styles.metaRain, { color: sky.textPrimary }]}>
+                  {h.uv != null && h.uv > 0 ? `☀️ UV ${h.uv}` : ' '}
+                </Text>
               )}
             </View>
           );
-        })}
-        <View style={{ width: 8 }} />
-      </ScrollView>
+        }}
+      />
     </View>
   );
 }
@@ -100,13 +114,12 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   row: {
-    flexDirection: 'row',
-    gap: 9,
     paddingBottom: 4,
-    paddingRight: 16,
+    paddingRight: 16 - GAP,
   },
   card: {
-    width: 82,
+    width: CARD_W,
+    marginRight: GAP,
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 8,

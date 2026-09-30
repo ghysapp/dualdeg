@@ -7,6 +7,10 @@
 
 import { getMoonIllumination, getPosition, getTimes } from 'suncalc';
 
+import { cachedFormatter } from '@/utils/tz';
+
+const TIME_OPTS: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+
 export interface Astro {
   sunrise: string;
   sunset: string;
@@ -18,16 +22,7 @@ export interface Astro {
 /** Format a Date as "h:mm AM/PM" in the given IANA timezone. */
 function formatTime(date: Date | null | undefined, tz: string): string {
   if (!date || !Number.isFinite(date.getTime())) return '';
-  const opts: Intl.DateTimeFormatOptions = {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  };
-  try {
-    return new Intl.DateTimeFormat('en-US', { ...opts, timeZone: tz }).format(date);
-  } catch {
-    return new Intl.DateTimeFormat('en-US', opts).format(date);
-  }
+  return cachedFormatter('en-US', TIME_OPTS, tz).format(date);
 }
 
 /** Map suncalc's phase (0=new, .25=first quarter, .5=full, .75=last quarter). */

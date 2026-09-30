@@ -8,6 +8,7 @@
  */
 
 import type { HourForecast, WeatherData } from '@/services/weatherApi';
+import { cachedFormatter } from '@/utils/tz';
 
 import type { FrameKind } from './types';
 
@@ -151,28 +152,14 @@ function precipOf(h: HourForecast): Precip | null {
 // Local clock
 // ---------------------------------------------------------------------------
 
-const partsFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function formatterFor(tz: string): Intl.DateTimeFormat {
-  let f = partsFormatters.get(tz);
-  if (!f) {
-    const opts: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    };
-    try {
-      f = new Intl.DateTimeFormat('en-CA', { ...opts, timeZone: tz });
-    } catch {
-      f = new Intl.DateTimeFormat('en-CA', opts);
-    }
-    partsFormatters.set(tz, f);
-  }
-  return f;
-}
+const CLOCK_OPTS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+};
 
 export interface LocalClock {
   date: string;
@@ -182,12 +169,30 @@ export interface LocalClock {
 
 /** Wall-clock date/hour/minute of an instant at the location. */
 export function localClock(ms: number, tz: string): LocalClock {
-  const parts = formatterFor(tz).formatToParts(new Date(ms));
+  const parts = cachedFormatter('en-CA', CLOCK_OPTS, tz).formatToParts(new Date(ms));
   const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
   return {
     date: `${g('year')}-${g('month')}-${g('day')}`,
     hour: Number(g('hour')) % 24,
     minute: Number(g('minute')),
+  };
+}
+
+/** Minutes the location's wall clock is ahead of UTC at an instant. */
+function utcOffsetMin(ms: number, tz: string): number {
+  const c = localClock(ms, tz);
+  const [y, m, d] = c.date.split('-').map(Number);
+  const wall = Date.UTC(y, m - 1, d, c.hour, c.minute);
+  return Math.round((wall - Math.floor(ms / 60000) * 60000) / 60000);
+}
+
+/** Local clock from a known UTC offset — pure arithmetic, no Intl. */
+function clockAt(ms: number, offsetMin: number): LocalClock {
+  const d = new Date(ms + offsetMin * 60000);
+  return {
+    date: d.toISOString().slice(0, 10),
+    hour: d.getUTCHours(),
+    minute: d.getUTCMinutes(),
   };
 }
 
@@ -224,34 +229,44 @@ export function buildTimeline(data: WeatherData, nowMs: number): Timeline {
   for (const h of data.hours) byEpoch.set(h.timeEpoch, h);
   for (const d of data.days) for (const h of d.hours ?? []) if (!byEpoch.has(h.timeEpoch)) byEpoch.set(h.timeEpoch, h);
 
-  const hours: THour[] = [...byEpoch.values()]
+  const upcoming = [...byEpoch.values()]
     .filter((h) => (h.timeEpoch + 3600) * 1000 > nowMs)
-    .sort((a, b) => a.timeEpoch - b.timeEpoch)
-    .map((h) => {
-      const clock = localClock(h.timeEpoch * 1000, tz);
-      const sky = skyFromCode(h.conditionCode);
-      return {
-        epoch: h.timeEpoch,
-        date: clock.date,
-        offset: daysBetween(now.date, clock.date),
-        hour: clock.hour,
-        tC: h.tempC,
-        tF: h.tempF,
-        feelC: h.feelsLikeC,
-        feelF: h.feelsLikeF,
-        humidity: h.humidity,
-        code: h.conditionCode,
-        pop: h.chanceOfRain ?? 0,
-        isDay: h.isDay,
-        uv: h.uv,
-        windKph: h.windKph,
-        gustKph: h.gustKph,
-        precipMm: h.precipMm,
-        precip: precipOf(h),
-        sky,
-        freezingFog: h.conditionCode === 1147 || (sky === 'fog' && h.tempC <= 0),
-      };
-    });
+    .sort((a, b) => a.timeEpoch - b.timeEpoch);
+
+  // Local clock per hour without an Intl call each: when the UTC offset is the
+  // same at both ends of the window (no DST change in it), it's the same for
+  // every hour in between. Intl is slow on Android Hermes (JNI per call).
+  const firstMs = (upcoming[0]?.timeEpoch ?? 0) * 1000;
+  const lastMs = (upcoming[upcoming.length - 1]?.timeEpoch ?? 0) * 1000;
+  const offset = upcoming.length ? utcOffsetMin(firstMs, tz) : 0;
+  const steady = upcoming.length > 0 && utcOffsetMin(lastMs, tz) === offset;
+
+  const hours: THour[] = upcoming.map((h) => {
+    const ms = h.timeEpoch * 1000;
+    const clock = steady ? clockAt(ms, offset) : localClock(ms, tz);
+    const sky = skyFromCode(h.conditionCode);
+    return {
+      epoch: h.timeEpoch,
+      date: clock.date,
+      offset: daysBetween(now.date, clock.date),
+      hour: clock.hour,
+      tC: h.tempC,
+      tF: h.tempF,
+      feelC: h.feelsLikeC,
+      feelF: h.feelsLikeF,
+      humidity: h.humidity,
+      code: h.conditionCode,
+      pop: h.chanceOfRain ?? 0,
+      isDay: h.isDay,
+      uv: h.uv,
+      windKph: h.windKph,
+      gustKph: h.gustKph,
+      precipMm: h.precipMm,
+      precip: precipOf(h),
+      sky,
+      freezingFog: h.conditionCode === 1147 || (sky === 'fog' && h.tempC <= 0),
+    };
+  });
 
   return { now, hours };
 }

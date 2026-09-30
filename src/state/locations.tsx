@@ -39,6 +39,7 @@ import {
   type WeatherData,
 } from '@/services/weatherApi';
 import { useSettings } from '@/state/settings';
+import { since as elapsed } from '@/utils/devTrace';
 
 const CITIES_KEY = 'dualdeg:cities';
 
@@ -232,14 +233,17 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
 
       inFlight.current.add(key);
       try {
+        if (__DEV__) console.log(`[wx] ${elapsed()} load "${query}"`);
         const data = await fetchWeather({ query, coords, country, place, language });
         if (__DEV__ && ref.kind === 'current') {
           console.log(
-            `[loc] query="${query}" -> "${data.location.name}" ` +
+            `[loc] ${elapsed()} query="${query}" -> "${data.location.name}" ` +
               `(${data.location.lat},${data.location.lon})`,
           );
         }
+        const writeStarted = Date.now();
         await writeCache(key, data);
+        if (__DEV__) console.log(`[wx] ${elapsed()} cache write took ${Date.now() - writeStarted}ms`);
         setEntry(key, {
           status: 'success',
           data,
@@ -278,7 +282,9 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
   const resolvePlaceName = useCallback(async (lat: number, lon: number) => {
     const token = ++geocodeToken.current;
     try {
+      const started = Date.now();
       const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+      if (__DEV__) console.log(`[loc] ${elapsed()} reverse geocode took ${Date.now() - started}ms`);
       if (geocodeToken.current !== token) return; // superseded by a newer fix
       const a = results[0];
       const name = a?.city || a?.subregion || a?.district || a?.region || null;
@@ -310,8 +316,13 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     }
   }, [ensureFresh, setEntry, language, strings]);
 
-  /** Precise location from device GPS (permission must already be granted). */
-  const acquireGps = useCallback(async () => {
+  // Granting permission in the OS dialog triggers two acquisitions at once: the
+  // priming flow's own, and recheckPermission() from the "active" event as the
+  // dialog closes. Callers during a run share it instead of starting another.
+  const gpsRun = useRef<Promise<void> | null>(null);
+
+  /** One GPS acquisition run (permission must already be granted). */
+  const runGps = useCallback(async () => {
     const apply = (lat: number, lon: number) => {
       const q = `${lat},${lon}`;
       setApproximate(false);
@@ -330,7 +341,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       if (last) {
         if (__DEV__) {
           console.log(
-            `[loc] lastKnown lat=${last.coords.latitude} lon=${last.coords.longitude} acc=${last.coords.accuracy}m`,
+            `[loc] ${elapsed()} lastKnown lat=${last.coords.latitude} lon=${last.coords.longitude} acc=${last.coords.accuracy}m`,
           );
         }
         apply(last.coords.latitude, last.coords.longitude);
@@ -348,7 +359,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       ]);
       if (__DEV__) {
         console.log(
-          `[loc] gpsFix lat=${pos.coords.latitude} lon=${pos.coords.longitude} acc=${pos.coords.accuracy}m`,
+          `[loc] ${elapsed()} gpsFix lat=${pos.coords.latitude} lon=${pos.coords.longitude} acc=${pos.coords.accuracy}m`,
         );
       }
       apply(pos.coords.latitude, pos.coords.longitude);
@@ -360,6 +371,16 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
     // 3. Only use the IP-based approximate location if we got no device fix at all.
     if (!got) await acquireApproximate();
   }, [ensureFresh, acquireApproximate, resolvePlaceName]);
+
+  /** Precise location from device GPS, joining a run already in progress. */
+  const acquireGps = useCallback(() => {
+    if (!gpsRun.current) {
+      gpsRun.current = runGps().finally(() => {
+        gpsRun.current = null;
+      });
+    }
+    return gpsRun.current;
+  }, [runGps]);
 
   // --- Permission flow ---------------------------------------------------
   // Resolve the current location once on mount. We check status WITHOUT
@@ -428,7 +449,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
         backgroundedAt.current = null;
         if (since != null && Date.now() - since >= BACKGROUND_REFRESH_THRESHOLD) {
           if (__DEV__) {
-            console.log(`[wx] foreground after ${Math.round((Date.now() - since) / 1000)}s — refreshing`);
+            console.log(`[wx] ${elapsed()} foreground after ${Math.round((Date.now() - since) / 1000)}s — refreshing`);
           }
           refreshVisibleRef.current();
         }
@@ -482,7 +503,7 @@ export function LocationsProvider({ children }: { children: ReactNode }) {
       if (last && Date.now() - last < MANUAL_REFRESH_COOLDOWN) {
         if (__DEV__) {
           const secs = Math.round((MANUAL_REFRESH_COOLDOWN - (Date.now() - last)) / 1000);
-          console.log(`[wx] refresh blocked for "${key}" — cooldown, ~${secs}s left`);
+          console.log(`[wx] ${elapsed()} refresh blocked for "${key}" — cooldown, ~${secs}s left`);
         }
         return;
       }

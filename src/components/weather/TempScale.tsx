@@ -10,14 +10,7 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useMemo, useRef } from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import { useSettings } from '@/state/settings';
 import { Font } from '@/theme/fonts';
@@ -56,6 +49,12 @@ interface Tick {
   major: boolean;
 }
 
+const TICK_COUNT = MAX_C - MIN_C + 1;
+/** Full ruler length: side padding + every tick. */
+const CONTENT_W = HPAD * 2 + TICK_COUNT * TICK_W;
+/** First tick to render so the opening window already surrounds `CENTER_C`. */
+const INITIAL_INDEX = Math.max(0, CENTER_C - MIN_C - 4);
+
 /** Left scroll offset that lands `CENTER_C` in the middle of a `width`-wide viewport. */
 function offsetForCenter(width: number): number {
   const idx = CENTER_C - MIN_C;
@@ -64,7 +63,7 @@ function offsetForCenter(width: number): number {
 
 export function TempScale({ sky }: { sky: SkyTheme }) {
   const { tempOrder, strings } = useSettings();
-  const scrollRef = useRef<ScrollView>(null);
+  const listRef = useRef<FlatList<Tick>>(null);
 
   const primaryUnit = tempOrder === 'FC' ? 'F' : 'C';
   const secondaryUnit = primaryUnit === 'C' ? 'F' : 'C';
@@ -85,7 +84,7 @@ export function TempScale({ sky }: { sky: SkyTheme }) {
 
   // Correct the initial position against the real viewport width once laid out.
   const onLayout = useCallback((e: LayoutChangeEvent) => {
-    scrollRef.current?.scrollTo({ x: offsetForCenter(e.nativeEvent.layout.width), animated: false });
+    listRef.current?.scrollToOffset({ offset: offsetForCenter(e.nativeEvent.layout.width), animated: false });
   }, []);
 
   return (
@@ -94,26 +93,38 @@ export function TempScale({ sky }: { sky: SkyTheme }) {
         {strings.tempReference.toUpperCase()}
       </Text>
       <View style={[styles.panel, { backgroundColor: sky.cardBg, borderColor: sky.cardBorder }]}>
-        <ScrollView
-          ref={scrollRef}
+        {/* Virtualized: 81 ticks, ~9 on screen. Mounting them all cost ~0.4 s
+            of JS on first render on a 4 GB phone; now only the visible window
+            (plus a buffer) is built, starting around 15°. */}
+        <FlatList
+          ref={listRef}
           horizontal
+          data={ticks}
+          keyExtractor={(t) => String(t.c)}
           showsHorizontalScrollIndicator={false}
           onLayout={onLayout}
-          contentOffset={{ x: offsetForCenter(Dimensions.get('window').width), y: 0 }}
+          getItemLayout={(_, index) => ({ length: TICK_W, offset: HPAD + TICK_W * index, index })}
+          initialScrollIndex={INITIAL_INDEX}
+          initialNumToRender={14}
+          maxToRenderPerBatch={10}
+          windowSize={5}
           contentContainerStyle={styles.row}
-        >
-          {/* Thermal spectrum spine, spanning the full length between the two rows. */}
-          <LinearGradient
-            colors={THERMAL as unknown as readonly [string, string, ...string[]]}
-            locations={AXIS_LOCATIONS as unknown as readonly [number, number, ...number[]]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.axis}
-          />
-          {ticks.map((t) => {
+          ListHeaderComponentStyle={styles.headerCell}
+          ListHeaderComponent={
+            // Thermal spectrum spine, spanning the whole ruler behind the ticks.
+            <LinearGradient
+              colors={THERMAL as unknown as readonly [string, string, ...string[]]}
+              locations={AXIS_LOCATIONS as unknown as readonly [number, number, ...number[]]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.axis}
+            />
+          }
+          ListFooterComponent={<View style={{ width: HPAD }} />}
+          renderItem={({ item: t }) => {
             const tint = t.major ? THERMAL[(t.c - MIN_C) / 10] : undefined;
             return (
-              <View key={t.c} style={styles.tick}>
+              <View style={styles.tick}>
                 <Text
                   style={[
                     styles.primary,
@@ -142,8 +153,8 @@ export function TempScale({ sky }: { sky: SkyTheme }) {
                 </Text>
               </View>
             );
-          })}
-        </ScrollView>
+          }}
+        />
       </View>
     </View>
   );
@@ -168,16 +179,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   row: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: HPAD,
   },
-  // Spans the full scroll content; centred on the tick band
+  // The header cell doubles as the left padding and hosts the axis; stretched
+  // to full height so the axis's `top` is measured from the ruler's top edge.
+  headerCell: {
+    width: HPAD,
+    alignSelf: 'stretch',
+  },
+  // Spans the full ruler from the header cell; centred on the tick band
   // (primary height 16 + half of band height 13 ≈ 22.5).
   axis: {
     position: 'absolute',
     left: 0,
-    right: 0,
+    width: CONTENT_W,
     top: 21,
     height: 3,
     borderRadius: 2,

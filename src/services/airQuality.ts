@@ -25,6 +25,7 @@ import {
 } from '@/config';
 import { isInFrance, isInGermany, isInRegion, isInUSA } from '@/services/geo';
 import { readCache, writeCache } from '@/services/cache';
+import { since } from '@/utils/devTrace';
 import { dateInTz } from '@/utils/tz';
 import type { AirQuality } from '@/services/weatherApi';
 
@@ -448,7 +449,7 @@ export async function fetchAirQuality(ctx: AirQualityContext): Promise<AirQualit
   const cached = await readCache<AirQuality | null>(key);
   if (cached && cached.age < AIR_QUALITY_TTL) {
     if (__DEV__) {
-      console.log(`[aq] reusing reading from ${Math.round(cached.age / 60000)} min ago`);
+      console.log(`[aq] ${since()} reusing reading from ${Math.round(cached.age / 60000)} min ago`);
     }
     return cached.value;
   }
@@ -458,15 +459,18 @@ export async function fetchAirQuality(ctx: AirQualityContext): Promise<AirQualit
     if (!source.covers(ctx)) continue;
     attempted = true;
     try {
+      const started = Date.now();
       const reading = await source.fetch(ctx);
       if (reading) {
-        if (__DEV__) console.log(`[aq] ${source.id} served band ${reading.band}`);
+        if (__DEV__) console.log(`[aq] ${since()} ${source.id} served band ${reading.band} (${Date.now() - started}ms)`);
+        const writeStarted = Date.now();
         await writeCache(key, reading);
+        if (__DEV__) console.log(`[aq] ${since()} cache write took ${Date.now() - writeStarted}ms`);
         return reading;
       }
     } catch (e) {
       if (__DEV__) {
-        console.log(`[aq] ${source.id} failed:`, e instanceof Error ? e.message : e);
+        console.log(`[aq] ${since()} ${source.id} failed:`, e instanceof Error ? e.message : e);
       }
     }
   }

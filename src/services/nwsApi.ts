@@ -16,6 +16,7 @@ import { fetchEpaUv } from '@/services/epaUv';
 import { conditionFromIcon, conditionText } from '@/i18n/conditions';
 import { dateInTz, localNow } from '@/utils/tz';
 import { cToF, feelsLikeC } from '@/utils/units';
+import { since } from '@/utils/devTrace';
 import type { LanguageCode } from '@/i18n/translations';
 import {
   summarizeDayHours,
@@ -124,7 +125,9 @@ export async function fetchNwsForecast(
   const rlat = round4(lat);
   const rlon = round4(lon);
 
+  const started = Date.now();
   const points = await nws(`${NWS_API_BASE}/points/${rlat},${rlon}`);
+  if (__DEV__) console.log(`[wx] ${since()} NWS points took ${Date.now() - started}ms`);
   const pp = points.properties ?? {};
   const tz: string = pp.timeZone || 'UTC';
   const name: string = pp.relativeLocation?.properties?.city ?? 'Current location';
@@ -139,6 +142,7 @@ export async function fetchNwsForecast(
     fetchEpaUv(rlat, rlon).catch(() => null),
   ]);
 
+  if (__DEV__) console.log(`[wx] ${since()} NWS hourly/daily/grid + EPA UV done (${Date.now() - started}ms total)`);
   const hPeriods: any[] = hourly.properties?.periods ?? [];
   const dPeriods: any[] = daily.properties?.periods ?? [];
 

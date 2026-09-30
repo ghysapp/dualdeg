@@ -8,8 +8,10 @@ import { LocationsProvider } from '@/state/locations';
 import { PurchasesProvider } from '@/state/purchases';
 import { SettingsProvider } from '@/state/settings';
 import { fontMap } from '@/theme/fonts';
+import { watchJsStalls } from '@/utils/devTrace';
 
 SplashScreen.preventAutoHideAsync();
+watchJsStalls();
 
 export default function RootLayout() {
   const [loaded] = useFonts(fontMap);
