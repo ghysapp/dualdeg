@@ -21,6 +21,10 @@ module.exports = function withAndroidSigning(config) {
     set('android.enableMinifyInReleaseBuilds', 'true');
     set('android.enableShrinkResourcesInReleaseBuilds', 'true');
 
+    // The template's 2 GB heap / 512 MB metaspace runs out during release
+    // lint of the native modules (Metaspace OOM) with parallel builds on.
+    set('org.gradle.jvmargs', '-Xmx4096m -XX:MaxMetaspaceSize=1024m');
+
     return config;
   });
 

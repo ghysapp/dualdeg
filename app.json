@@ -127,13 +127,21 @@
           },
           "ios": {
             "extraPods": [
-              { "name": "GoogleMobileAdsMediationAppLovin" },
-              { "name": "GoogleMobileAdsMediationMintegral" }
+              {
+                "name": "GoogleMobileAdsMediationAppLovin"
+              },
+              {
+                "name": "GoogleMobileAdsMediationMintegral"
+              }
             ]
           }
         }
       ],
-      "./plugins/withMediationAdapters"
+      "./plugins/withMediationAdapters",
+      "expo-font",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
